@@ -1,0 +1,140 @@
+.metrics-group {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 10px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.metrics-group:hover {
+  box-shadow: 
+    0 8px 12px rgba(0, 0, 0, 0.1),
+    0 20px 40px rgba(102, 126, 234, 0.15);
+}
+
+.metrics-group-high {
+  border-top: 4px solid #667eea;
+}
+
+.metrics-group-medium {
+  border-top: 4px solid #764ba2;
+}
+
+.metrics-group-low {
+  border-top: 4px solid #e2e8f0;
+}
+
+.metrics-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.metrics-group-header:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+}
+
+.metrics-group-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metrics-group-icon {
+  font-size: 1.75rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  color: white;
+}
+
+.metrics-group-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.metrics-group-title-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.metrics-group-toggle {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.metrics-group-toggle:hover {
+  background: rgba(102, 126, 234, 0.2);
+  transform: scale(1.1);
+}
+
+.metrics-group-toggle.open {
+  transform: rotate(180deg);
+}
+
+.metrics-group-content {
+  padding: 2rem;
+  animation: slideDown 0.3s ease-out;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .metrics-group-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .metrics-group-title-text {
+    font-size: 1.25rem;
+  }
+
+  .metrics-group-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.5rem;
+  }
+
+  .metrics-group-content {
+    padding: 1.5rem;
+  }
+}
+

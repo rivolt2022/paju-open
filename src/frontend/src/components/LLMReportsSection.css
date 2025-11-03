@@ -1,0 +1,155 @@
+.llm-reports-section {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.reports-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.reports-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.reports-icon {
+  font-size: 2rem;
+  color: #667eea;
+}
+
+.reports-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.reports-count {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.reports-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+}
+
+.reports-close-btn:hover {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.reports-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.filter-icon {
+  font-size: 1.25rem;
+  color: #667eea;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.filter-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.reports-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #6b7280;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.reports-empty p {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+@media (max-width: 768px) {
+  .llm-reports-section {
+    padding: 1.5rem;
+  }
+
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-buttons {
+    width: 100%;
+  }
+
+  .filter-btn {
+    flex: 1;
+  }
+}
+

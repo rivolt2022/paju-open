@@ -1,0 +1,31 @@
+.trend-chart {
+  width: 100%;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 12px;
+}
+
+.chart-loading,
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 2px dashed var(--border);
+}
+
+.chart-empty {
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chart-empty::before {
+  content: '📊';
+  font-size: 3rem;
+  opacity: 0.3;
+}
+

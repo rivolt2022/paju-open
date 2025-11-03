@@ -1,0 +1,211 @@
+.chat-button {
+  position: fixed !important;
+  bottom: 2rem !important;
+  left: 2rem !important;
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 
+    0 10px 30px rgba(102, 126, 234, 0.6),
+    0 20px 60px rgba(118, 75, 162, 0.5),
+    inset 0 2px 8px rgba(255, 255, 255, 0.4),
+    0 0 0 4px rgba(102, 126, 234, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9998 !important;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: visible;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.chat-button:hover {
+  transform: scale(1.15) translateY(-4px) rotate(5deg);
+  box-shadow: 
+    0 12px 32px rgba(102, 126, 234, 0.6),
+    0 20px 60px rgba(118, 75, 162, 0.5),
+    inset 0 2px 8px rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.chat-button:active {
+  transform: scale(1.05) translateY(-2px) rotate(0deg);
+  box-shadow: 
+    0 4px 16px rgba(102, 126, 234, 0.4),
+    0 8px 32px rgba(118, 75, 162, 0.3);
+}
+
+.chat-button-icon {
+  font-size: 2.5rem;
+  position: relative;
+  z-index: 2;
+  animation: float 3s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-button-icon svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+.chat-button:hover .chat-button-icon {
+  transform: scale(1.1) rotate(-5deg);
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.chat-button-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  z-index: 3;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.chat-button-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  opacity: 0.5;
+  animation: ripple 2.5s ease-out infinite;
+  z-index: 1;
+}
+
+.chat-button-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  border-radius: 36px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.5) 0%, rgba(118, 75, 162, 0.3) 50%, transparent 80%);
+  animation: glow 2s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+}
+
+.chat-button.chat-button-open {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  transform: rotate(45deg);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.chat-button.chat-button-open .chat-button-icon {
+  transform: rotate(-45deg);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.chat-button.chat-button-open:hover {
+  transform: rotate(45deg) scale(1.15) translateY(-4px);
+}
+
+.chat-button.chat-button-open .chat-button-pulse {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .chat-button {
+    bottom: 1.5rem !important;
+    left: 1.5rem !important;
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+  }
+
+  .chat-button-icon {
+    font-size: 2rem;
+  }
+
+  .chat-button-pulse {
+    width: 64px;
+    height: 64px;
+    border-radius: 32px;
+  }
+}
+
+/* 작은 화면 */
+@media (max-width: 480px) {
+  .chat-button {
+    bottom: 1rem !important;
+    left: 1rem !important;
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+  }
+
+  .chat-button-icon {
+    font-size: 1.75rem;
+  }
+}
+

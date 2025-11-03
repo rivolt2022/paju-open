@@ -1,0 +1,116 @@
+{
+  "training_date": "2025-11-03T14:41:10.376639",
+  "model_type": "Random Forest",
+  "validation_method": "K-Fold Cross Validation (5 folds)",
+  "results": {
+    "cv_mae_mean": 1523.7217024166407,
+    "cv_mae_std": 274.0651410590109,
+    "cv_rmse_mean": 3175.7545704802806,
+    "cv_rmse_std": 3064.840654474191,
+    "cv_r2_mean": 0.994492549024543,
+    "cv_r2_std": 0.004757783616615028,
+    "cv_folds": [
+      {
+        "fold": 1,
+        "mae": 1210.1480825553583,
+        "rmse": 1905.1823229912313,
+        "r2": 0.9972171299765313
+      },
+      {
+        "fold": 2,
+        "mae": 1487.681721130081,
+        "rmse": 2334.1442597357577,
+        "r2": 0.9962940361443434
+      },
+      {
+        "fold": 3,
+        "mae": 1734.688917510512,
+        "rmse": 3132.3341650190728,
+        "r2": 0.9956847339461906
+      },
+      {
+        "fold": 4,
+        "mae": 1260.018893180247,
+        "rmse": 1803.5071109247926,
+        "r2": 0.9981427740304716
+      },
+      {
+        "fold": 5,
+        "mae": 1926.070897707006,
+        "rmse": 5318.362636191168,
+        "r2": 0.9851240710251774
+      }
+    ],
+    "final_mae": 719.4530248520778,
+    "final_rmse": 1581.9753223602927,
+    "final_r2": 0.9986153177816832,
+    "final_mape": 0.028637283876470004,
+    "n_features": 45,
+    "n_samples": 115,
+    "cv_folds_used": 5
+  },
+  "n_features": 45,
+  "n_samples": 115,
+  "feature_names": [
+    "연도",
+    "월",
+    "방문인구(명)",
+    "year",
+    "month",
+    "day",
+    "day_of_week",
+    "day_of_year",
+    "week_of_year",
+    "quarter",
+    "is_weekend",
+    "season",
+    "is_holiday",
+    "is_month_start",
+    "is_month_end",
+    "avg_life_population",
+    "life_population_normalized",
+    "거주인구",
+    "근무인구",
+    "방문인구",
+    "resident_ratio",
+    "worker_ratio",
+    "visitor_ratio",
+    "morning_population",
+    "afternoon_population",
+    "evening_population",
+    "estimated_consumption",
+    "regional_vitality",
+    "population_vitality",
+    "consumption_vitality",
+    "방문인구(명)_lag_1",
+    "방문인구(명)_lag_7",
+    "방문인구(명)_lag_30",
+    "방문인구(명)_rolling_mean_7",
+    "방문인구(명)_rolling_std_7",
+    "방문인구(명)_rolling_max_7",
+    "방문인구(명)_rolling_min_7",
+    "방문인구(명)_rolling_mean_30",
+    "방문인구(명)_rolling_std_30",
+    "방문인구(명)_rolling_max_30",
+    "방문인구(명)_rolling_min_30",
+    "방문인구(명)_rolling_mean_90",
+    "방문인구(명)_rolling_std_90",
+    "방문인구(명)_rolling_max_90",
+    "방문인구(명)_rolling_min_90"
+  ],
+  "data_sources": {
+    "visit_data_rows": 115,
+    "revenue_data_rows": 108,
+    "life_population_rows": 38,
+    "time_slot_rows": 26,
+    "weekend_pattern_rows": 63,
+    "consumption_pattern_rows": 26,
+    "vitality_index_rows": 40
+  },
+  "target_range": {
+    "min": 384.4,
+    "max": 149973.1,
+    "mean": 43484.50608695652,
+    "std": 42699.33795973333
+  }
+}

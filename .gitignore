@@ -1,37 +1,63 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-.venv/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
 venv/
-.env
-.env.*
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Node / frontend
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
-frontend/.cache/
+# ML Models
+*.pkl
+*.joblib
+*.h5
+*.pth
+*.pt
+*.onnx
 
-# Build & logs
-*.log
-logs/
-.cache/
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Data caches
-backend/cache/
-*.parquet
-
-# Misc
+# IDE
+.vscode/
+.idea/
 *.swp
 *.swo
+*~
 
+# OS
+.DS_Store
+Thumbs.db
 
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+dist/
+build/
+*.pyc

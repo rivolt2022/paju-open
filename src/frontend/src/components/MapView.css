@@ -1,0 +1,130 @@
+.map-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.map-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: var(--surface);
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.map-loading p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.map-loading p:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* 카카오맵 커스터마이징 */
+.map-container .kakao-map {
+  border-radius: 12px;
+}
+
+/* 범례 스타일 */
+.map-legend {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* InfoWindow 커스터마이징 */
+.custom-infowindow {
+  background: var(--surface);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-xl);
+  border: 2px solid var(--primary);
+  min-width: 250px;
+  max-width: 300px;
+  z-index: 1000;
+}
+
+.custom-infowindow h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.custom-infowindow p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.custom-infowindow p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.custom-infowindow .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+.status-badge.crowded {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.relaxed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* 마커 커스터마이징 */
+.kakao-maps-marker {
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.kakao-maps-marker:hover {
+  transform: scale(1.1);
+}

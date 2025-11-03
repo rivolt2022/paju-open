@@ -1,0 +1,213 @@
+.heatmap-view {
+  width: 100%;
+}
+
+.heatmap-container {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.heatmap-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.time-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.heatmap-row-header {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.heatmap-day-header {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: 60px repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.heatmap-time-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border: 2px solid transparent;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.1);
+  z-index: 10;
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+.heatmap-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.heatmap-low {
+  background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%);
+}
+
+.heatmap-low .heatmap-value {
+  color: #166534;
+}
+
+.heatmap-medium {
+  background: linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%);
+}
+
+.heatmap-medium .heatmap-value {
+  color: #92400e;
+}
+
+.heatmap-high {
+  background: linear-gradient(135deg, #fee2e2 0%, #fca5a5 100%);
+}
+
+.heatmap-high .heatmap-value {
+  color: #991b1b;
+}
+
+.heatmap-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* 히트맵 인사이트 섹션 */
+.heatmap-insight {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: 12px;
+}
+
+.heatmap-insight .insight-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.heatmap-insight .insight-icon {
+  font-size: 1.25rem;
+  color: var(--primary);
+}
+
+.heatmap-insight .insight-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.heatmap-insight .insight-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heatmap-insight .insight-item {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.heatmap-insight .insight-item strong {
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+}
+
+.heatmap-insight .insight-recommendation {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.legend-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .heatmap-row-header,
+  .heatmap-row {
+    grid-template-columns: 50px repeat(7, minmax(40px, 1fr));
+  }
+
+  .heatmap-time-header {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  .heatmap-day-header {
+    font-size: 0.75rem;
+    padding: 0.25rem;
+  }
+
+  .heatmap-value {
+    font-size: 0.625rem;
+  }
+}
+
