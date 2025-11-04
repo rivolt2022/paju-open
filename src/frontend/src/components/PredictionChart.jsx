@@ -1,7 +1,7 @@
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import './PredictionChart.css'
 
-function PredictionChart({ data, loading }) {
+function PredictionChart({ data, loading, date = null }) {
   if (loading) {
     return <div className="chart-loading">데이터 로딩 중...</div>
   }
@@ -9,6 +9,8 @@ function PredictionChart({ data, loading }) {
   if (!data || !data.predictions || data.predictions.length === 0) {
     return <div className="chart-empty">예측 데이터가 없습니다.</div>
   }
+  
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }) : '오늘'
 
   // 차트 데이터 형식 변환 (예측 vs 실제 비교)
   const chartData = data.predictions.map(pred => ({
@@ -25,6 +27,9 @@ function PredictionChart({ data, loading }) {
 
   return (
     <div className="prediction-chart">
+      <div className="chart-header">
+        <span className="chart-date-label">{dateLabel} 예측 데이터</span>
+      </div>
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
           <CartesianGrid strokeDasharray="3 3" />

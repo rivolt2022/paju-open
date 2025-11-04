@@ -2,6 +2,9 @@ import { useState } from 'react'
 import './HeatmapView.css'
 
 function HeatmapView({ predictions, date }) {
+  // 날짜 레이블 생성
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }) : '오늘'
+  
   // 시간대별 데이터 생성 (예시)
   const timeSlots = ['09:00', '12:00', '15:00', '18:00', '21:00']
   const daysOfWeek = ['월', '화', '수', '목', '금', '토', '일']
@@ -38,6 +41,9 @@ function HeatmapView({ predictions, date }) {
 
   return (
     <div className="heatmap-view">
+      <div className="heatmap-header-label">
+        <span className="heatmap-date-label">{dateLabel} 시간대별/요일별 혼잡도</span>
+      </div>
       <div className="heatmap-container">
         <div className="heatmap-header">
           <div className="heatmap-axis-label time-label">시간대</div>

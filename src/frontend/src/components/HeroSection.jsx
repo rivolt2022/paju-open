@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MdPeople, MdGpsFixed, MdBusiness, MdAccessTime, MdLightbulb, MdCalendarToday, MdMenuBook, MdDateRange, MdPlayArrow } from 'react-icons/md'
 import './HeroSection.css'
 
-export default function HeroSection({ statistics, predictions, trendData, onDateChange, onTimeSlotChange, selectedDate, selectedTimeSlot, onPeriodPredict }) {
+export default function HeroSection({ statistics, predictions, trendData, onPeriodPredict, startDate: propStartDate, endDate: propEndDate, onDateChange, selectedDate = null }) {
   const [animatedValue, setAnimatedValue] = useState(0)
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -63,16 +63,41 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
   const optimalTime = predictions?.predictions && predictions.predictions.length > 0
     ? predictions.predictions[0].optimal_time || null
     : null
+  
+  // 날짜 레이블 생성
+  const dateLabel = selectedDate ? new Date(selectedDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
-  // 기간 선택 상태
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
-  const [endDate, setEndDate] = useState(() => {
+  // 날짜는 props로 받아서 사용 (Dashboard에서 관리)
+  // endDate 기본값 계산
+  const getDefaultEndDate = () => {
     const tomorrow = new Date()
     tomorrow.setDate(tomorrow.getDate() + 7)
     return tomorrow.toISOString().split('T')[0]
-  })
+  }
+  
+  const [startDate, setStartDate] = useState(propStartDate || new Date().toISOString().split('T')[0])
+  const [endDate, setEndDate] = useState(propEndDate || getDefaultEndDate())
   const [predicting, setPredicting] = useState(false)
-  const [hasInitialPrediction, setHasInitialPrediction] = useState(false)
+  
+  // props가 변경되면 로컬 상태 업데이트
+  useEffect(() => {
+    if (propStartDate) setStartDate(propStartDate)
+    if (propEndDate) setEndDate(propEndDate)
+  }, [propStartDate, propEndDate])
+
+  const handleDateInputChange = (type, value) => {
+    if (type === 'start') {
+      setStartDate(value)
+      if (onDateChange && endDate) {
+        onDateChange(value, endDate)
+      }
+    } else {
+      setEndDate(value)
+      if (onDateChange && startDate) {
+        onDateChange(startDate, value)
+      }
+    }
+  }
 
   const handlePeriodPredict = async () => {
     if (!startDate || !endDate || startDate > endDate) {
@@ -95,36 +120,6 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
     }
     setPredicting(false)
   }
-
-  // 페이지 로드 시 기본 예측 수행 (한 번만)
-  useEffect(() => {
-    if (hasInitialPrediction) return // 이미 실행했으면 더 이상 실행하지 않음
-    
-    if (startDate && endDate && onPeriodPredict) {
-      setHasInitialPrediction(true)
-      const performInitialPrediction = async () => {
-        if (!startDate || !endDate || startDate > endDate) {
-          return
-        }
-        setPredicting(true)
-        try {
-        if (onPeriodPredict) {
-          await onPeriodPredict(startDate, endDate)
-        }
-        } catch (error) {
-          console.error('초기 예측 실패:', error)
-        } finally {
-          setPredicting(false)
-        }
-      }
-      // 약간의 지연을 두어 무한루프 방지
-      const timer = setTimeout(() => {
-        performInitialPrediction()
-      }, 500)
-      return () => clearTimeout(timer)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // 컴포넌트 마운트 시 한 번만 실행
 
   return (
     <div className="hero-section">
@@ -180,18 +175,25 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
                       const newStartDate = e.target.value
                       setStartDate(newStartDate)
                       // 시작일 변경 시 종료일이 7일을 초과하면 자동 조정
+                      let newEndDate = endDate
                       if (newStartDate && endDate) {
                         const start = new Date(newStartDate)
                         const end = new Date(endDate)
                         const maxEndDate = new Date(start)
                         maxEndDate.setDate(maxEndDate.getDate() + 7)
                         if (end > maxEndDate) {
-                          setEndDate(maxEndDate.toISOString().split('T')[0])
+                          newEndDate = maxEndDate.toISOString().split('T')[0]
+                          setEndDate(newEndDate)
                         }
                         // 종료일이 시작일보다 이전이면 조정
                         if (end < start) {
-                          setEndDate(newStartDate)
+                          newEndDate = newStartDate
+                          setEndDate(newEndDate)
                         }
+                      }
+                      // Dashboard에 날짜 변경 알림 (자동으로 예측 실행됨)
+                      if (onDateChange && newStartDate) {
+                        onDateChange(newStartDate, newEndDate || endDate)
                       }
                     }}
                     className="date-input"
@@ -218,6 +220,10 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
                         }
                       }
                       setEndDate(newEndDate)
+                      // Dashboard에 날짜 변경 알림 (자동으로 예측 실행됨)
+                      if (onDateChange && newEndDate && startDate) {
+                        onDateChange(startDate, newEndDate)
+                      }
                     }}
                     className="date-input"
                     min={startDate}
@@ -259,7 +265,7 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
                 </div>
                 <div className="stat-content">
                   <div className="stat-value">{totalVisits !== null ? totalVisits : '-'}</div>
-                  <div className="stat-label">오늘 예상 방문자</div>
+                  <div className="stat-label">{dateLabel} 예상 방문자</div>
                 </div>
               </div>
 
@@ -273,13 +279,13 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
                   </div>
                   <div className="stat-label">예측 신뢰도</div>
                   {modelAccuracy && (
-                    <div className="stat-hint">
-                      {accuracyLevel === 'excellent' 
-                        ? '날씨 예보 수준으로 매우 신뢰할 수 있습니다' 
-                        : accuracyLevel === 'high'
-                        ? '날씨 예보처럼 신뢰할 수 있는 수준입니다'
-                        : '신뢰할 수 있는 수준입니다'}
-                    </div>
+                  <div className="stat-hint">
+                    {accuracyLevel === 'excellent' 
+                      ? '날씨 예보 수준으로 매우 신뢰할 수 있습니다' 
+                      : accuracyLevel === 'high'
+                      ? '날씨 예보처럼 신뢰할 수 있는 수준입니다'
+                      : '신뢰할 수 있는 수준입니다'}
+                  </div>
                   )}
                 </div>
               </div>
@@ -315,22 +321,22 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
             </div>
             <div className="insight-list">
               {yesterdayChange !== null && (
-                <div className="insight-item">
-                  <span className="insight-dot"></span>
-                  <span>오늘 방문 예측: 전일 대비 <strong>{parseFloat(yesterdayChange) > 0 ? '+' : ''}{yesterdayChange}%</strong></span>
-                </div>
+              <div className="insight-item">
+                <span className="insight-dot"></span>
+                  <span>{dateLabel} 방문 예측: 전일 대비 <strong>{parseFloat(yesterdayChange) > 0 ? '+' : ''}{yesterdayChange}%</strong></span>
+              </div>
               )}
               {optimalTime && (
-                <div className="insight-item">
-                  <span className="insight-dot"></span>
+              <div className="insight-item">
+                <span className="insight-dot"></span>
                   <span>최적 방문 시간대: <strong>{optimalTime}</strong></span>
-                </div>
+              </div>
               )}
               {modelAccuracy !== null && (
-                <div className="insight-item">
-                  <span className="insight-dot"></span>
-                  <span>예측 신뢰도: <strong>{modelAccuracy}%</strong> ({accuracyLevel === 'excellent' ? '매우 높음 (날씨 예보 수준)' : accuracyLevel === 'high' ? '높음' : '양호'})</span>
-                </div>
+              <div className="insight-item">
+                <span className="insight-dot"></span>
+                <span>예측 신뢰도: <strong>{modelAccuracy}%</strong> ({accuracyLevel === 'excellent' ? '매우 높음 (날씨 예보 수준)' : accuracyLevel === 'high' ? '높음' : '양호'})</span>
+              </div>
               )}
               {!yesterdayChange && !optimalTime && modelAccuracy === null && (
                 <div className="insight-item">

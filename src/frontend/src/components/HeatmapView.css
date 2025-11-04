@@ -2,6 +2,18 @@
   width: 100%;
 }
 
+.heatmap-header-label {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.heatmap-date-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 .heatmap-container {
   background: var(--surface);
   border-radius: 12px;

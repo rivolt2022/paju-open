@@ -244,30 +244,55 @@ class InferencePredictor:
                 else:
                     features_df[feat] = 0.0
         
-        # 특징 선택
+        # 특징 선택 (required_features에 있는 것만 사용)
         final_features = [f for f in required_features if f in features_df.columns]
-        if len(final_features) == 0:
-            final_features = ['year', 'month', 'day_of_week', 'is_weekend', 'season']
-            for col in final_features:
-                if col not in features_df.columns:
-                    if col == 'year':
-                        features_df[col] = date_obj.year
-                    elif col == 'month':
-                        features_df[col] = date_obj.month
-                    elif col == 'day_of_week':
-                        features_df[col] = date_obj.weekday()
-                    elif col == 'is_weekend':
-                        features_df[col] = 1 if date_obj.weekday() >= 5 else 0
-                    elif col == 'season':
-                        features_df[col] = (date_obj.month - 1) // 3 + 1
         
-        X = features_df[final_features].fillna(0.0)
+        # 누락된 feature는 기본값으로 추가
+        missing_features = [f for f in required_features if f not in features_df.columns]
+        for feat in missing_features:
+            if '_lag_' in feat or '_rolling_' in feat:
+                features_df[feat] = 0.0
+            elif feat == '연도' or feat == 'year':
+                features_df[feat] = date_obj.year
+            elif feat == '월' or feat == 'month':
+                features_df[feat] = date_obj.month
+            elif feat == 'day':
+                features_df[feat] = date_obj.day
+            elif feat == 'day_of_week':
+                features_df[feat] = date_obj.weekday()
+            elif feat == 'day_of_year':
+                features_df[feat] = date_obj.timetuple().tm_yday
+            elif feat == 'week_of_year':
+                features_df[feat] = date_obj.isocalendar()[1]
+            elif feat == 'quarter':
+                features_df[feat] = (date_obj.month - 1) // 3 + 1
+            elif feat == 'is_weekend':
+                features_df[feat] = 1 if date_obj.weekday() >= 5 else 0
+            elif feat == 'season':
+                features_df[feat] = (date_obj.month - 1) // 3 + 1
+            elif feat == 'is_holiday':
+                features_df[feat] = 0
+            elif feat == 'is_month_start':
+                features_df[feat] = 1 if date_obj.day == 1 else 0
+            elif feat == 'is_month_end':
+                features_df[feat] = 1 if date_obj.day >= 28 else 0
+            elif feat.startswith('space_'):
+                # 공간별 특징은 나중에 설정
+                features_df[feat] = 0
+            else:
+                features_df[feat] = 0.0
+        
+        # 모든 required_features를 포함하도록 X 생성
+        X = features_df[required_features].fillna(0.0)
         
         # Series인 경우 DataFrame으로 변환
         if isinstance(X, pd.Series):
             X = X.to_frame().T
         elif X.shape[0] == 0:
-            X = pd.DataFrame([[0.0] * len(final_features)], columns=final_features)
+            X = pd.DataFrame([[0.0] * len(required_features)], columns=required_features)
+        
+        # 모델이 기대하는 순서로 정렬
+        X = X[required_features]
         
         return X
     
@@ -309,54 +334,108 @@ class InferencePredictor:
                         'date': [date_obj]
                     })
                     
-                    # 특징 엔지니어링 적용
-                    features_df = self.feature_engineer.prepare_features(prediction_df, '방문인구(명)')
-                    
-                    # 방문인구 예측 모델의 특징 목록 가져오기
+                    # 방문인구 예측 모델의 특징 목록 가져오기 (먼저 모델이 학습한 feature 확인)
                     if hasattr(self.visit_model, 'feature_names') and len(self.visit_model.feature_names) > 0:
                         required_features = self.visit_model.feature_names.copy()
                     else:
                         # 기본 특징 목록
-                        required_features = self.feature_engineer.get_feature_names(features_df)
-                        if len(required_features) == 0:
-                            required_features = ['year', 'month', 'day_of_week', 'is_weekend', 'season']
+                        required_features = ['year', 'month', 'day_of_week', 'is_weekend', 'season']
                     
-                    # 공간별 특징이 있는지 확인하고 포함
-                    space_features = [col for col in features_df.columns if col.startswith('space_')]
-                    for space_feat in space_features:
-                        if space_feat not in required_features:
-                            required_features.append(space_feat)
+                    # 특징 엔지니어링 적용
+                    features_df = self.feature_engineer.prepare_features(prediction_df, '방문인구(명)')
                     
-                    # 특징 준비
+                    # 모델이 학습한 공간 feature만 유지 (학습하지 않은 공간 feature 제거)
+                    model_space_features = [f for f in required_features if f.startswith('space_')]
+                    features_df_space_features = [col for col in features_df.columns if col.startswith('space_')]
+                    
+                    # 디버그: 모델이 기대하는 공간 feature 확인
+                    if model_space_features:
+                        print(f"[InferencePredictor] 모델이 학습한 공간 feature: {model_space_features[:5]}... (총 {len(model_space_features)}개)")
+                    
+                    # 현재 예측 공간에 대한 feature 이름 찾기 (모델이 학습한 이름 사용)
+                    current_space_feature = None
+                    
+                    # 모델이 학습한 모든 공간 feature 이름 확인
+                    model_space_names = [f.replace('space_', '') for f in model_space_features]
+                    
+                    # 정확히 일치하는 경우
+                    for model_feat in model_space_features:
+                        model_space_name = model_feat.replace('space_', '')
+                        if model_space_name == space:
+                            current_space_feature = model_feat
+                            break
+                    
+                    # 일치하지 않으면 부분 일치 시도
+                    if not current_space_feature:
+                        for model_feat in model_space_features:
+                            model_space_name = model_feat.replace('space_', '')
+                            # 공간 이름이 포함되어 있는지 확인
+                            if space in model_space_name or model_space_name in space:
+                                current_space_feature = model_feat
+                                print(f"[InferencePredictor] 공간 이름 매핑: {space} -> {model_space_name}")
+                                break
+                    
+                    # 여전히 없으면 가장 유사한 이름 찾기 (첫 글자 일치)
+                    if not current_space_feature and model_space_names:
+                        # 첫 글자로 매칭 시도
+                        space_first_char = space[0] if len(space) > 0 else ''
+                        for model_feat in model_space_features:
+                            model_space_name = model_feat.replace('space_', '')
+                            if model_space_name and len(model_space_name) > 0 and model_space_name[0] == space_first_char:
+                                current_space_feature = model_feat
+                                print(f"[InferencePredictor] 첫 글자 매핑: {space} -> {model_space_name}")
+                                break
+                    
+                    # 매칭 실패 시 로그
+                    if not current_space_feature:
+                        print(f"[InferencePredictor] 경고: {space}에 대한 feature를 찾을 수 없습니다. 모델이 학습한 공간: {model_space_names}")
+                    
+                    # 모델이 학습하지 않은 공간 feature 제거
+                    for feat in features_df_space_features:
+                        if feat not in model_space_features:
+                            features_df = features_df.drop(columns=[feat], errors='ignore')
+                    
+                    # 모델이 학습한 공간 feature가 있지만 현재 공간에 대한 feature가 없으면 생성
+                    if model_space_features and current_space_feature:
+                        # 모델이 학습한 모든 space_ feature를 0으로 초기화
+                        for model_feat in model_space_features:
+                            if model_feat not in features_df.columns:
+                                features_df[model_feat] = 0
+                        # 현재 공간에 해당하는 feature만 1로 설정
+                        features_df[current_space_feature] = 1
+                    
+                    # 특징 준비 (모델이 기대하는 feature만 사용)
                     X = self._prepare_features(features_df, required_features, date_obj, space)
                     
-                    # 공간별 특징이 제대로 설정되었는지 확인 및 수정
-                    space_feature_cols = [col for col in X.columns if col.startswith('space_')]
-                    if space_feature_cols:
-                        # 현재 공간에 해당하는 특징만 1로 설정
-                        current_space_feature = f'space_{space}'
-                        if current_space_feature in X.columns:
-                            X[current_space_feature] = 1
-                            # 다른 공간 특징들은 0으로 설정
-                            for col in space_feature_cols:
-                                if col != current_space_feature:
-                                    X[col] = 0
+                    # 모델이 학습한 feature와 정확히 일치하도록 조정
+                    # 1. 모델이 기대하는 feature만 포함된 DataFrame 생성
+                    X_aligned = pd.DataFrame(index=X.index)
+                    
+                    # 2. 모델이 기대하는 모든 feature 추가 (모델이 학습한 순서대로)
+                    for feat in required_features:
+                        if feat in X.columns:
+                            X_aligned[feat] = X[feat].values
                         else:
-                            # 현재 공간 특징이 없으면 생성
-                            X[current_space_feature] = 1
-                            # 다른 공간 특징들은 0으로 설정
-                            for col in space_feature_cols:
-                                X[col] = 0
-                    else:
-                        # 공간 특징이 전혀 없으면 생성
-                        all_spaces = ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터', '출판문화정보원']
-                        for sp in all_spaces:
-                            col_name = f'space_{sp}'
-                            if col_name not in X.columns:
-                                X[col_name] = 0
-                        current_space_feature = f'space_{space}'
-                        if current_space_feature in X.columns:
-                            X[current_space_feature] = 1
+                            # 모델이 기대하지만 없는 feature는 기본값으로 채우기
+                            if feat.startswith('space_'):
+                                # 공간별 특징: 현재 공간만 1, 나머지 0
+                                # 모델이 학습한 feature 이름 사용
+                                X_aligned[feat] = 1 if (current_space_feature and feat == current_space_feature) else 0
+                            else:
+                                X_aligned[feat] = 0.0
+                    
+                    # 3. 모델이 기대하는 순서로 정렬
+                    X = X_aligned[required_features]
+                    
+                    # 4. 공간별 특징 설정 (모델이 학습한 공간만 처리)
+                    # 모든 공간 특징을 먼저 0으로 초기화
+                    space_feature_cols = [col for col in X.columns if col.startswith('space_')]
+                    for col in space_feature_cols:
+                        X[col] = 0
+                    
+                    # 현재 공간에 해당하는 특징만 1로 설정 (모델이 학습한 경우에만)
+                    if current_space_feature and current_space_feature in X.columns:
+                        X[current_space_feature] = 1
                     
                     # 방문인구 예측
                     visit_prediction = self.visit_model.predict(X)

@@ -16,9 +16,21 @@ function PeriodPredictionResult({ result, loading }) {
   }
 
   const { raw_predictions, summary } = result
+  
+  // 날짜 레이블 생성
+  const startDate = raw_predictions?.start_date || ''
+  const endDate = raw_predictions?.end_date || ''
+  const dateLabel = startDate && endDate 
+    ? `${new Date(startDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} ~ ${new Date(endDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}`
+    : ''
 
   return (
     <div className="period-prediction-result">
+      {dateLabel && (
+        <div className="prediction-date-header">
+          <span className="prediction-date-label">예측 기간: {dateLabel}</span>
+        </div>
+      )}
       {/* LLM으로 정리된 서술형 결과 */}
       <div className="prediction-summary">
         <div className="summary-header">

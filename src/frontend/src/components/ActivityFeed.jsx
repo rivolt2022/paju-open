@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { MdGpsFixed, MdTrendingUp, MdNotifications, MdSmartToy, MdRefresh, MdFlashOn } from 'react-icons/md'
 import './ActivityFeed.css'
 
-function ActivityFeed({ predictions, statistics }) {
+function ActivityFeed({ predictions, statistics, date = null }) {
   const [activities, setActivities] = useState([])
+  
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
   useEffect(() => {
     // 활동 데이터 생성
@@ -14,7 +16,7 @@ function ActivityFeed({ predictions, statistics }) {
           type: 'prediction',
           icon: <MdGpsFixed />,
           title: '새로운 예측 완료',
-          description: `${predictions?.predictions?.length || 5}개 문화 공간에 대한 방문 예측이 업데이트되었습니다`,
+          description: `${predictions?.predictions?.length || 5}개 문화 공간에 대한 ${dateLabel} 방문 예측이 업데이트되었습니다`,
           time: '방금 전',
           color: 'primary'
         },
@@ -41,7 +43,7 @@ function ActivityFeed({ predictions, statistics }) {
           type: 'analysis',
           icon: <MdSmartToy />,
           title: 'AI 분석 완료',
-          description: '생성형 AI가 오늘의 방문 패턴을 분석했습니다',
+          description: `생성형 AI가 ${dateLabel}의 방문 패턴을 분석했습니다`,
           time: '10분 전',
           color: 'info'
         },

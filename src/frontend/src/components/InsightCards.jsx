@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { MdRocketLaunch, MdAccessTime, MdGpsFixed, MdBarChart, MdLightbulb } from 'react-icons/md'
 import './InsightCards.css'
 
-function InsightCards({ predictions, statistics, onMetricClick }) {
+function InsightCards({ predictions, statistics, onMetricClick, date = null }) {
   const [activeCard, setActiveCard] = useState(0)
+  
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -17,7 +19,7 @@ function InsightCards({ predictions, statistics, onMetricClick }) {
       icon: <MdRocketLaunch />,
       title: '최고 활성 공간',
       value: predictions?.predictions?.[0]?.space || '헤이리예술마을',
-      description: '오늘 가장 많은 방문자가 예상되는 문화 공간',
+      description: `${dateLabel} 가장 많은 방문자가 예상되는 문화 공간`,
       color: 'primary',
       trend: 'up',
       change: '+8.5%'

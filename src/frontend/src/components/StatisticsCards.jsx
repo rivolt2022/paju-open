@@ -1,8 +1,10 @@
 import { MdPeople, MdBarChart, MdGpsFixed, MdBusiness } from 'react-icons/md'
 import './StatisticsCards.css'
 
-function StatisticsCards({ statistics, onMetricClick }) {
+function StatisticsCards({ statistics, onMetricClick, date = null }) {
   if (!statistics) return null
+
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
   const cards = [
     {
@@ -15,7 +17,7 @@ function StatisticsCards({ statistics, onMetricClick }) {
       change: '+5.2%',
       trend: 'up',
       metricType: 'total_visits',
-      description: '오늘 전체 문화 공간에 예상되는 방문자 수'
+      description: `${dateLabel} 전체 문화 공간에 예상되는 방문자 수`
     },
     {
       title: '평균 혼잡도',

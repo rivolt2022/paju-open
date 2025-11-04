@@ -10,6 +10,8 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const timeoutRef = useRef(null)
+  
+  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
   useEffect(() => {
     if (predictions && statistics) {
@@ -45,11 +47,11 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
         },
         {
           id: 2,
-          title: '오늘 방문 혜택 마케팅',
-          description: '예상 방문자를 위한 당일 특가 이벤트 공지',
+          title: `${dateLabel} 방문 혜택 마케팅`,
+          description: `예상 방문자를 위한 ${dateLabel} 특가 이벤트 공지`,
           priority: 'High',
           department: '마케팅팀',
-          timeline: '오늘',
+          timeline: dateLabel,
           icon: '📢',
           impact: '높음'
         }
@@ -104,11 +106,11 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
           },
           {
             id: 2,
-            title: '오늘 방문 혜택 마케팅',
-            description: '예상 방문자를 위한 당일 이벤트 공지',
+            title: `${dateLabel} 방문 혜택 마케팅`,
+            description: `예상 방문자를 위한 ${dateLabel} 이벤트 공지`,
             priority: 'High',
             department: '마케팅팀',
-            timeline: '오늘',
+            timeline: dateLabel,
             icon: '📢',
             impact: '높음'
           }
@@ -133,11 +135,11 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
         },
         {
           id: 2,
-          title: '오늘 방문 혜택 마케팅',
-          description: '예상 방문자를 위한 당일 이벤트 공지',
+          title: `${dateLabel} 방문 혜택 마케팅`,
+          description: `예상 방문자를 위한 ${dateLabel} 이벤트 공지`,
           priority: 'High',
           department: '마케팅팀',
-          timeline: '오늘',
+          timeline: dateLabel,
           icon: '📢',
           impact: '높음'
         },
@@ -147,7 +149,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
           description: '예측된 혼잡도 높은 공간에 추가 직원 배치',
           priority: 'Medium',
           department: '운영팀',
-          timeline: '오늘',
+          timeline: dateLabel,
           icon: '👥',
           impact: '중간'
         }
@@ -243,11 +245,11 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
       },
       {
         id: 2,
-        title: '오늘 방문 혜택 마케팅',
-        description: '예상 방문자를 위한 당일 특가 이벤트 공지',
-        priority: 'High',
-        department: '마케팅팀',
-        timeline: '오늘',
+            title: `${dateLabel} 방문 혜택 마케팅`,
+            description: `예상 방문자를 위한 ${dateLabel} 특가 이벤트 공지`,
+            priority: 'High',
+            department: '마케팅팀',
+            timeline: dateLabel,
         icon: '📢',
         impact: '높음'
       },
@@ -257,7 +259,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
         description: '예측된 혼잡도 높은 공간에 추가 직원 배치 및 대기 공간 확보',
         priority: 'Medium',
         department: '운영팀',
-        timeline: '오늘',
+        timeline: dateLabel,
         icon: '👥',
         impact: '중간'
       }

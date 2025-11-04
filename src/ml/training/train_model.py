@@ -323,6 +323,36 @@ def main():
         else:
             merged_df['관광지명'] = '헤이리예술마을'
     
+    # 모든 문화 공간이 학습 데이터에 포함되도록 보장
+    all_spaces = ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터']
+    existing_spaces = merged_df['관광지명'].unique().tolist() if '관광지명' in merged_df.columns else []
+    
+    # 누락된 공간에 대한 데이터 생성
+    missing_spaces = [space for space in all_spaces if space not in existing_spaces]
+    if missing_spaces and not merged_df.empty:
+        print(f"  - 누락된 공간 데이터 생성 중: {missing_spaces}")
+        # 기존 데이터의 날짜 범위 확인
+        if 'date' in merged_df.columns:
+            dates = merged_df['date'].unique()
+            # 각 날짜에 대해 누락된 공간별 데이터 생성
+            missing_data_list = []
+            for space in missing_spaces:
+                for date in dates:
+                    # 해당 날짜의 기존 데이터 중 하나를 템플릿으로 사용
+                    template = merged_df[merged_df['date'] == date].iloc[0] if len(merged_df[merged_df['date'] == date]) > 0 else merged_df.iloc[0]
+                    space_row = template.copy()
+                    space_row['관광지명'] = space
+                    # 방문인구는 기존 데이터의 평균값 사용 (공간별 계수 적용)
+                    if '방문인구(명)' in merged_df.columns:
+                        avg_visits = merged_df[merged_df['date'] == date]['방문인구(명)'].mean() if len(merged_df[merged_df['date'] == date]) > 0 else merged_df['방문인구(명)'].mean()
+                        space_row['방문인구(명)'] = avg_visits * 0.8  # 기본값: 평균의 80%
+                    missing_data_list.append(space_row)
+            
+            if missing_data_list:
+                missing_df = pd.DataFrame(missing_data_list)
+                merged_df = pd.concat([merged_df, missing_df], ignore_index=True)
+            print(f"    누락된 공간 데이터 생성 완료: {len(missing_spaces)}개 공간, {len(missing_data_list)}행 추가")
+    
     # 큐레이션 타겟 변수 생성
     curation_df = create_curation_targets(merged_df, loader)
     
@@ -344,6 +374,14 @@ def main():
     
     # 특징 컬럼 추출 (타겟 변수 제외)
     feature_cols = engineer.get_feature_names(features_df, target_col=target_col)
+    
+    # space_ feature가 포함되어 있는지 확인 및 추가
+    space_features = [col for col in features_df.columns if col.startswith('space_')]
+    for space_feat in space_features:
+        if space_feat not in feature_cols:
+            feature_cols.append(space_feat)
+            print(f"    space_ feature 추가: {space_feat}")
+    
     if len(feature_cols) == 0:
         print("경고: 특징이 없습니다. 기본 특징을 생성합니다.")
         feature_cols = ['year', 'month', 'day_of_week', 'is_weekend', 'season']
@@ -352,6 +390,7 @@ def main():
                 features_df[col] = np.random.randn(len(features_df))
     
     print(f"    생성된 특징 수: {len(feature_cols)}")
+    print(f"    space_ feature 수: {len([c for c in feature_cols if c.startswith('space_')])}")
     print(f"    특징 목록: {feature_cols[:10]}...")
     
     # 큐레이션 타겟 변수들 학습

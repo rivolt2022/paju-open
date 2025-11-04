@@ -695,14 +695,14 @@ async def get_model_metrics():
 
 
 @app.get("/api/analytics/meaningful-metrics")
-async def get_meaningful_metrics(space_name: str = "헤이리예술마을"):
+async def get_meaningful_metrics(space_name: str = "헤이리예술마을", date: str = None):
     """출판단지 활성화를 위한 유의미한 ML 지표 조회"""
     try:
         if meaningful_metrics_service is None:
             raise HTTPException(status_code=503, detail="의미 있는 지표 서비스가 초기화되지 않았습니다.")
         
-        # 종합 지표 계산
-        comprehensive_metrics = meaningful_metrics_service.get_comprehensive_metrics(space_name)
+        # 종합 지표 계산 (날짜가 있으면 해당 날짜 기준으로)
+        comprehensive_metrics = meaningful_metrics_service.get_comprehensive_metrics(space_name, date=date)
         
         return comprehensive_metrics
         
@@ -714,13 +714,13 @@ async def get_meaningful_metrics(space_name: str = "헤이리예술마을"):
 
 
 @app.get("/api/analytics/activation-scores")
-async def get_activation_scores(space_name: str = "헤이리예술마을"):
+async def get_activation_scores(space_name: str = "헤이리예술마을", date: str = None):
     """문화 공간 활성화 점수 조회"""
     try:
         if meaningful_metrics_service is None:
             raise HTTPException(status_code=503, detail="의미 있는 지표 서비스가 초기화되지 않았습니다.")
         
-        scores = meaningful_metrics_service.get_activation_scores(space_name)
+        scores = meaningful_metrics_service.get_activation_scores(space_name, date=date)
         return scores
         
     except Exception as e:
@@ -729,13 +729,13 @@ async def get_activation_scores(space_name: str = "헤이리예술마을"):
 
 
 @app.get("/api/analytics/publishing-vitality")
-async def get_publishing_vitality():
+async def get_publishing_vitality(date: str = None):
     """출판단지 활성화 지수 조회"""
     try:
         if meaningful_metrics_service is None:
             raise HTTPException(status_code=503, detail="의미 있는 지표 서비스가 초기화되지 않았습니다.")
         
-        vitality = meaningful_metrics_service.get_publishing_complex_vitality()
+        vitality = meaningful_metrics_service.get_publishing_complex_vitality(date=date)
         return vitality
         
     except Exception as e:
@@ -747,7 +747,9 @@ async def get_publishing_vitality():
 async def comprehensive_publishing_analysis(request: Dict):
     """출판단지 활성화 종합 분석 (LLM 강화)"""
     try:
+        from datetime import datetime
         space_name = request.get('space_name', '헤이리예술마을')
+        date = request.get('date', datetime.now().strftime('%Y-%m-%d'))
         activation_scores = request.get('activation_scores', {})
         metrics = request.get('metrics', {})
         vitality = request.get('vitality', {})
@@ -758,9 +760,15 @@ async def comprehensive_publishing_analysis(request: Dict):
         weekend_ratio = metrics.get('weekend_analysis', {}).get('weekend_ratio', 1.0)
         demographic_targeting = metrics.get('demographic_targeting', {})
         
+        # 날짜 레이블 생성
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_label = date_obj.strftime('%Y년 %m월 %d일')
+        
         # LLM 프롬프트 생성
         prompt = f"""당신은 파주시 출판단지 활성화를 위한 전문 AI 분석가입니다. 
 다음 데이터를 종합적으로 분석하여 출판단지 활성화를 위한 실행 가능한 전략을 제시해주세요.
+
+**분석 기준 날짜**: {date_label} ({date})
 
 **현재 상태 데이터**:
 - 문화 공간 활성화 점수: {activation_overall:.1f}점 / 100점
@@ -923,11 +931,17 @@ async def get_action_items(request: Dict):
   - 최적 시간: {optimal_time}
 """)
         
+        # 날짜 레이블 생성
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_label = date_obj.strftime('%Y년 %m월 %d일')
+        
         # 액션 아이템 생성 프롬프트
         prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 전략 어시스턴트입니다.
 분석된 데이터를 바탕으로 **당장 실행 가능한** 활성화 액션 아이템을 제시해주세요.
 
-**현재 상황 (분석 날짜: {date})**:
+**분석 기준 날짜**: {date_label} ({date})
+
+**현재 상황**:
 - 전체 예상 방문자: {total_visits:,}명
 - 평균 혼잡도: {avg_crowd:.1f}%
 - ML 모델 정확도: {model_accuracy:.1f}%
@@ -1161,11 +1175,19 @@ async def explain_metric(request: Dict):
 async def chart_insight(request: Dict):
     """LLM 기반 차트 인사이트 생성"""
     try:
+        from datetime import datetime
         chart_type = request.get('chart_type', '')
         chart_data = request.get('chart_data', {})
         context = request.get('context', {})
+        date = context.get('date', datetime.now().strftime('%Y-%m-%d'))
+        
+        # 날짜 레이블 생성
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_label = date_obj.strftime('%Y년 %m월 %d일')
         
         prompt = f"""당신은 데이터 시각화 전문가입니다. 다음 차트 데이터를 분석하여 인사이트를 제공해주세요.
+
+**분석 기준 날짜**: {date_label} ({date})
 
 **차트 정보**:
 - 차트 유형: {chart_type}

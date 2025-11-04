@@ -7,11 +7,29 @@ import './MeaningfulMetrics.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
+function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, startDate = null, endDate = null }) {
   const [metrics, setMetrics] = useState(null)
   const [activationScores, setActivationScores] = useState(null)
   const [vitality, setVitality] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  // 날짜 범위 포맷 함수
+  const formatDateRange = (start, end) => {
+    if (!start) return ''
+    const startDateObj = new Date(start)
+    const startFormatted = startDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+    
+    // endDate가 있고 startDate와 다르면 날짜 범위 표시
+    if (end && end !== start) {
+      const endDateObj = new Date(end)
+      const endFormatted = endDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+      return `${startFormatted} ~ ${endFormatted}`
+    }
+    
+    // 단일 날짜면 요일 포함
+    const weekday = startDateObj.toLocaleDateString('ko-KR', { weekday: 'long' })
+    return `${startFormatted} (${weekday})`
+  }
   
   // LLM 설명 상태 관리
   const [llmInsights, setLlmInsights] = useState({})
@@ -23,8 +41,11 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
   const [showReportModal, setShowReportModal] = useState(false)
 
   useEffect(() => {
+    // 날짜나 공간이 변경되면 모든 LLM 인사이트 초기화
+    setLlmInsights({})
+    setLlmLoading({})
     loadMetrics()
-  }, [spaceName])
+  }, [spaceName, date])
 
   useEffect(() => {
     // 컴포넌트 언마운트 시 타임아웃 정리
@@ -109,6 +130,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/analytics/comprehensive-publishing-analysis`, {
         space_name: spaceName,
+        date: date || undefined,
         activation_scores: activationScores,
         metrics: {
           demographic_targeting: metrics.demographic_targeting,
@@ -139,20 +161,30 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
   const loadMetrics = async () => {
     setLoading(true)
     try {
-      // 종합 지표 로드
+      // 종합 지표 로드 (날짜 파라미터 포함)
       const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/meaningful-metrics`, {
-        params: { space_name: spaceName }
+        params: { 
+          space_name: spaceName,
+          date: date || undefined
+        }
       })
       setMetrics(metricsResponse.data)
 
-      // 활성화 점수 로드
+      // 활성화 점수 로드 (날짜 파라미터 포함)
       const scoresResponse = await axios.get(`${API_BASE_URL}/api/analytics/activation-scores`, {
-        params: { space_name: spaceName }
+        params: { 
+          space_name: spaceName,
+          date: date || undefined
+        }
       })
       setActivationScores(scoresResponse.data)
 
-      // 출판단지 활성화 지수 로드
-      const vitalityResponse = await axios.get(`${API_BASE_URL}/api/analytics/publishing-vitality`)
+      // 출판단지 활성화 지수 로드 (날짜 파라미터 포함)
+      const vitalityResponse = await axios.get(`${API_BASE_URL}/api/analytics/publishing-vitality`, {
+        params: { 
+          date: date || undefined
+        }
+      })
       setVitality(vitalityResponse.data)
 
     } catch (error) {
@@ -264,6 +296,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
         chart_data: chartData,
         context: {
           space_name: spaceName,
+          date: date || undefined,
           ...context
         }
       }, {
@@ -389,6 +422,9 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
           <h3 className="card-title">
             <MdLightbulb className="card-title-icon" />
             AI 종합 활성화 분석
+            {startDate && endDate && startDate !== endDate && (
+              <span className="date-range-label"> ({formatDateRange(startDate, endDate)})</span>
+            )}
           </h3>
           {comprehensiveAnalysisLoading ? (
             <div className="analysis-loading">

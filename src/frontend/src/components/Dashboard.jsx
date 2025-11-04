@@ -22,9 +22,16 @@ import './Dashboard.css'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
 function Dashboard() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  // 날짜를 한 곳에서만 관리: startDate를 기준 날짜로 사용
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
+  const [endDate, setEndDate] = useState(() => {
+    const nextWeek = new Date()
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    return nextWeek.toISOString().split('T')[0]
+  })
+  const selectedDate = startDate // selectedDate는 startDate와 동일
+  
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('all')
-  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [predictions, setPredictions] = useState(null)
   const [statistics, setStatistics] = useState(null)
   const [trendData, setTrendData] = useState(null)
@@ -37,10 +44,26 @@ function Dashboard() {
   const chatModalRef = useRef(null)
   const [periodPredictionResult, setPeriodPredictionResult] = useState(null)
   const [periodPredictionLoading, setPeriodPredictionLoading] = useState(false)
+  const [hasInitialPrediction, setHasInitialPrediction] = useState(false)
 
+  // 날짜가 변경되면 모든 데이터 다시 로드
   useEffect(() => {
     loadData()
   }, [selectedDate, selectedTimeSlot])
+  
+  // 초기 로드 시 기본 예측 수행
+  useEffect(() => {
+    if (!hasInitialPrediction && startDate && endDate) {
+      setHasInitialPrediction(true)
+      const timer = setTimeout(() => {
+        // 초기 로드 시에는 기간 예측 실행 (기간별 예측 결과도 표시)
+        handlePeriodPredict(startDate, endDate)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+  
+  // 초기 로드가 완료된 후 날짜 변경 시에는 loadData만 호출 (useEffect가 자동 처리)
 
   const loadData = async () => {
     setLoading(true)
@@ -63,15 +86,15 @@ function Dashboard() {
       // const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/model-metrics`)
       // setModelMetrics(metricsResponse.data)
 
-      // 트렌드 데이터 로드 (최근 7일만)
-      const today = new Date()
-      const weekAgo = new Date(today)
+      // 트렌드 데이터 로드 (선택된 날짜 기준으로 7일 전부터)
+      const selectedDateObj = new Date(selectedDate)
+      const weekAgo = new Date(selectedDateObj)
       weekAgo.setDate(weekAgo.getDate() - 7)
       
       const trendResponse = await axios.get(`${API_BASE_URL}/api/analytics/trends`, {
         params: { 
           start_date: weekAgo.toISOString().split('T')[0],
-          end_date: today.toISOString().split('T')[0],
+          end_date: selectedDate,
         }
       })
       setTrendData(trendResponse.data)
@@ -119,23 +142,68 @@ function Dashboard() {
     }
   }
 
-  const handlePeriodPredict = async (startDate, endDate) => {
+  // 날짜 범위 포맷 함수
+  const formatDateRange = (start, end) => {
+    if (!start) return '오늘'
+    const startDateObj = new Date(start)
+    const startFormatted = startDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+    
+    // endDate가 있고 startDate와 다르면 날짜 범위 표시
+    if (end && end !== start) {
+      const endDateObj = new Date(end)
+      const endFormatted = endDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+      return `${startFormatted} ~ ${endFormatted}`
+    }
+    
+    // 단일 날짜면 요일 포함
+    const weekday = startDateObj.toLocaleDateString('ko-KR', { weekday: 'long' })
+    return `${startFormatted} (${weekday})`
+  }
+
+  const handlePeriodPredict = async (newStartDate, newEndDate) => {
     setPeriodPredictionLoading(true)
     setPeriodPredictionResult(null)
     try {
+      // 날짜 업데이트 (모든 지표가 이 날짜 기준으로 업데이트됨)
+      setStartDate(newStartDate)
+      setEndDate(newEndDate)
+      
       // 기간별 예측 API 호출
       const response = await axios.post(`${API_BASE_URL}/api/predict/period`, {
         cultural_spaces: ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터'],
-        start_date: startDate,
-        end_date: endDate,
+        start_date: newStartDate,
+        end_date: newEndDate,
         time_slot: 'afternoon'
       })
+      
+      // 선택된 날짜 기준으로 예측 데이터 업데이트 (단일 날짜 예측)
+      const singleDateResponse = await axios.post(`${API_BASE_URL}/api/predict/visits`, {
+        cultural_spaces: ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터'],
+        date: newStartDate,
+        time_slot: 'afternoon',
+      })
+      setPredictions(singleDateResponse.data)
+      
+      // 선택된 날짜 기준으로 통계 데이터 업데이트
+      const statsResponse = await axios.get(`${API_BASE_URL}/api/analytics/statistics`, {
+        params: { date: newStartDate }
+      })
+      setStatistics(statsResponse.data)
+      
+      // 트렌드 데이터도 선택된 날짜 기준으로 업데이트
+      const trendResponse = await axios.get(`${API_BASE_URL}/api/analytics/trends`, {
+        params: { 
+          start_date: newStartDate,
+          end_date: newEndDate,
+        }
+      })
+      setTrendData(trendResponse.data)
       
       // LLM으로 예측 결과를 서술형으로 정리
       const llmResponse = await axios.post(`${API_BASE_URL}/api/llm/predict-summary`, {
         predictions: response.data.predictions,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: newStartDate,
+        end_date: newEndDate,
         statistics: response.data.statistics
       }, {
         timeout: 60000  // LLM 응답을 위해 60초로 증가
@@ -148,11 +216,11 @@ function Dashboard() {
       
       // 리포트에 추가
       const report = {
-        title: `기간별 예측 리포트 (${startDate} ~ ${endDate})`,
+        title: `기간별 예측 리포트 (${newStartDate} ~ ${newEndDate})`,
         content: llmResponse.data,
         type: 'analysis',
         metadata: {
-          date: `${startDate} ~ ${endDate}`,
+          date: `${newStartDate} ~ ${newEndDate}`,
           source: '기간별 예측'
         }
       }
@@ -163,16 +231,28 @@ function Dashboard() {
       setPeriodPredictionLoading(false)
     }
   }
+  
+  // 날짜 변경 핸들러 (HeroSection에서 날짜 입력 시 호출됨)
+  const handleDateChange = (newStartDate, newEndDate) => {
+    // 날짜만 업데이트 (useEffect가 selectedDate 변경을 감지하여 loadData 호출)
+    setStartDate(newStartDate)
+    setEndDate(newEndDate)
+    // selectedDate가 변경되면 useEffect가 loadData()를 자동 호출함
+  }
 
 
   return (
     <div className="dashboard">
       {/* 히어로 섹션 */}
       <HeroSection 
-        statistics={statistics}
+        statistics={statistics} 
         predictions={predictions}
         trendData={trendData}
         onPeriodPredict={handlePeriodPredict}
+        startDate={startDate}
+        endDate={endDate}
+        onDateChange={handleDateChange}
+        selectedDate={selectedDate}
       />
 
       {/* 기간별 예측 결과 */}
@@ -203,7 +283,7 @@ function Dashboard() {
 
       {/* 핵심 지표 그룹 */}
       <MetricsGroup 
-        title="오늘의 핵심 정보" 
+        title={`${formatDateRange(startDate, endDate)}의 핵심 정보`}
         icon={<MdBarChart />}
         priority="high"
         defaultOpen={true}
@@ -211,6 +291,7 @@ function Dashboard() {
         {statistics && (
           <StatisticsCards 
             statistics={statistics}
+            date={selectedDate}
             onMetricClick={(metricName, metricValue, metricType) => {
               setShowChatModal(true)
               setTimeout(() => {
@@ -225,13 +306,16 @@ function Dashboard() {
 
       {/* 출판단지 활성화 지표 그룹 - LLM 강화 */}
       <MetricsGroup 
-        title="출판단지 활성화 분석" 
+        title={`${formatDateRange(startDate, endDate)} 출판단지 활성화 분석`}
         icon={<MdBusiness />}
         priority="high"
         defaultOpen={true}
       >
         <MeaningfulMetrics 
           spaceName="헤이리예술마을"
+          date={selectedDate}
+          startDate={startDate}
+          endDate={endDate}
           onMetricClick={(metricName, metricValue, metricType) => {
             setShowChatModal(true)
             setTimeout(() => {
@@ -245,7 +329,7 @@ function Dashboard() {
 
       {/* 예측 및 패턴 분석 그룹 */}
       <MetricsGroup 
-        title="방문 예측과 패턴" 
+        title={`${formatDateRange(startDate, endDate)} 방문 예측과 패턴`} 
         icon={<MdTrendingUp />}
         priority="medium"
         defaultOpen={true}
@@ -253,14 +337,16 @@ function Dashboard() {
         <div className="dashboard-grid">
           <div className="dashboard-item full-width">
             <h2>
-              <MdTrendingUp className="inline-icon" /> 예측한 방문자 수 vs 실제 방문자 수 비교
+              <MdTrendingUp className="inline-icon" /> 
+              {formatDateRange(startDate, endDate)} 예측한 방문자 수 vs 실제 방문자 수 비교
             </h2>
-            <PredictionChart data={predictions} loading={loading} />
+            <PredictionChart data={predictions} loading={loading} date={selectedDate} />
           </div>
 
           <div className="dashboard-item">
             <h2>
-              <MdFlashOn className="inline-icon" /> 언제 가장 많이 방문하는지 (시간대별/요일별)
+              <MdFlashOn className="inline-icon" /> 
+              {formatDateRange(startDate, endDate)} 언제 가장 많이 방문하는지 (시간대별/요일별)
             </h2>
             <HeatmapView predictions={predictions} date={selectedDate} />
           </div>
@@ -269,7 +355,7 @@ function Dashboard() {
 
       {/* 실시간 모니터링 그룹 */}
       <MetricsGroup 
-        title="AI 인사이트 & 실시간 활동" 
+        title={`${formatDateRange(startDate, endDate)} AI 인사이트 & 실시간 활동`}
         icon={<MdFlashOn />}
         priority="low"
         defaultOpen={true}
@@ -278,7 +364,8 @@ function Dashboard() {
           <div className="stats-cards-wrapper">
             <InsightCards 
               predictions={predictions} 
-              statistics={statistics} 
+              statistics={statistics}
+              date={selectedDate}
               onMetricClick={(metricName, metricValue, metricType) => {
                 setShowChatModal(true)
                 setTimeout(() => {
@@ -290,7 +377,7 @@ function Dashboard() {
             />
           </div>
           <div className="activity-feed-wrapper">
-            <ActivityFeed predictions={predictions} statistics={statistics} />
+            <ActivityFeed predictions={predictions} statistics={statistics} date={selectedDate} />
           </div>
         </div>
       </MetricsGroup>
@@ -298,7 +385,7 @@ function Dashboard() {
       {/* 트렌드 분석 그룹 */}
       {trendData && trendData.space_trend && (
         <MetricsGroup 
-          title="문화 공간별 변화 추이" 
+          title={`${selectedDate ? new Date(selectedDate).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }) : '오늘'} 문화 공간별 변화 추이`}
           icon={<MdTrendingDown />}
           priority="low"
           defaultOpen={true}

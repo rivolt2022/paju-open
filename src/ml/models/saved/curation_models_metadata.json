@@ -1,55 +1,55 @@
 {
-  "training_date": "2025-11-04T18:53:06.020484",
+  "training_date": "2025-11-04T20:35:49.391677",
   "model_type": "Random Forest (Curation Focused)",
   "validation_method": "K-Fold Cross Validation (5 folds)",
   "models": {
     "북토크_score": {
       "target": "북토크_recommendation_score",
-      "n_samples": 115
+      "n_samples": 207
     },
     "북토크_suitability": {
       "target": "북토크_time_suitability",
-      "n_samples": 115
+      "n_samples": 207
     },
     "북토크_match": {
       "target": "북토크_demographic_match",
-      "n_samples": 115
+      "n_samples": 207
     },
     "작가 사인회_score": {
       "target": "작가 사인회_recommendation_score",
-      "n_samples": 115
+      "n_samples": 207
     },
     "작가 사인회_suitability": {
       "target": "작가 사인회_time_suitability",
-      "n_samples": 115
+      "n_samples": 207
     },
     "작가 사인회_match": {
       "target": "작가 사인회_demographic_match",
-      "n_samples": 115
+      "n_samples": 207
     },
     "전시회_score": {
       "target": "전시회_recommendation_score",
-      "n_samples": 115
+      "n_samples": 207
     },
     "전시회_suitability": {
       "target": "전시회_time_suitability",
-      "n_samples": 115
+      "n_samples": 207
     },
     "전시회_match": {
       "target": "전시회_demographic_match",
-      "n_samples": 115
+      "n_samples": 207
     },
     "문화 프로그램_score": {
       "target": "문화 프로그램_recommendation_score",
-      "n_samples": 115
+      "n_samples": 207
     },
     "문화 프로그램_suitability": {
       "target": "문화 프로그램_time_suitability",
-      "n_samples": 115
+      "n_samples": 207
     },
     "문화 프로그램_match": {
       "target": "문화 프로그램_demographic_match",
-      "n_samples": 115
+      "n_samples": 207
     }
   },
   "feature_names": [
@@ -107,7 +107,16 @@
     "방문인구(명)_rolling_mean_90",
     "방문인구(명)_rolling_std_90",
     "방문인구(명)_rolling_max_90",
-    "방문인구(명)_rolling_min_90"
+    "방문인구(명)_rolling_min_90",
+    "space_DMZ평화관광",
+    "space_공릉관광지",
+    "space_교하도서관",
+    "space_마장호수출렁다리",
+    "space_임진각평화누리",
+    "space_파주문화센터",
+    "space_파주출판단지",
+    "space_파주출판도시",
+    "space_헤이리예술마을"
   ],
   "program_types": [
     "북토크",
