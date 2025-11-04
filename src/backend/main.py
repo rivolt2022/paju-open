@@ -1456,6 +1456,17 @@ async def chat_query(request: Dict):
         }
 
 
+# Health check 엔드포인트 (배포 환경에서 사용)
+@app.get("/health")
+async def health_check():
+    """Health check 엔드포인트 - 배포 환경에서 서버 상태 확인용"""
+    return {
+        "status": "healthy",
+        "service": "PAJU Culture Lab API",
+        "version": "1.0.0"
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     print(f"\n[Backend] 서버 시작...")
