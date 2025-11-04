@@ -71,6 +71,8 @@ try:
     print("[Backend] 생성형 AI 초기화 완료")
 except Exception as e:
     print(f"[Backend] 생성형 AI 초기화 실패: {e}")
+    print(f"[Backend] 생성형 AI 오류 상세: {type(e).__name__}: {str(e)}")
+    content_generator = None  # None으로 설정하여 오류 처리
 
 # ML 서비스 레이어 (선택사항 - 더 깔끔한 구조)
 try:

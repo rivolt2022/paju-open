@@ -28,6 +28,13 @@ COPY src/backend/ ./src/backend/
 COPY src/ml/ ./src/ml/
 COPY src/scripts/ ./src/scripts/
 COPY sample/ ./sample/
+COPY data/ ./data/
+
+# 데이터 파일 존재 확인
+RUN ls -la /app/data/ && \
+    echo "데이터 파일 확인:" && \
+    ls -la /app/data/*.xlsx 2>/dev/null || echo "경고: Excel 파일이 없습니다" && \
+    ls -la /app/data/*.json 2>/dev/null || echo "경고: JSON 파일이 없습니다"
 
 # 환경 변수 설정
 ENV PYTHONUNBUFFERED=1

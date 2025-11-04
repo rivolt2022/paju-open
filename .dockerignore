@@ -96,11 +96,6 @@ temp/
 src/frontend/
 src/frontend/**
 
-# 데이터 파일 (배포 시 필요 없다면)
-data/
-*.xlsx
-*.xls
-
 # Fly.io 설정 파일
 fly.toml
 fly.toml.bak
@@ -120,3 +115,8 @@ $RECYCLE.BIN/
 *.zip
 *.tar.gz
 *.7z
+
+# 데이터 파일은 포함해야 함 (!data/ 추가)
+!data/
+!data/*.xlsx
+!data/*.json

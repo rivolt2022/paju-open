@@ -54,6 +54,7 @@ primary_region = 'nrt'
 
 [[vm]]
   size = 'shared-cpu-1x'
+  memory_mb = 512
 
 [[metrics]]
   port = 9091

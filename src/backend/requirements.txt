@@ -7,5 +7,6 @@ numpy==1.26.2
 scikit-learn==1.3.2
 joblib==1.3.2
 openai==1.3.7
+httpx==0.27.2  # openai 1.3.7과 호환되는 버전 (0.28.0+에서는 proxies 인자 제거됨)
 requests==2.31.0
 python-dotenv==1.0.0

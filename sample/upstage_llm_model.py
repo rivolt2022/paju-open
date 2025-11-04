@@ -78,8 +78,8 @@ class UpstageModel:
                 ],
                 "stream": False,
                 "max_tokens": self.max_tokens,
-                "temperature": self.temperature,
-                "reasoning_effort": reasoning_effort
+                "temperature": self.temperature
+                # reasoning_effort는 OpenAI 1.3.7에서 지원하지 않음 (제거됨)
             }
             
             # 응답 형식 설정
@@ -141,7 +141,7 @@ class UpstageModel:
                 "stream": False,
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
-                "reasoning_effort": reasoning_effort,
+                # reasoning_effort는 OpenAI 1.3.7에서 지원하지 않음
                 "top_p": top_p,
                 "frequency_penalty": frequency_penalty,
                 "presence_penalty": presence_penalty
