@@ -238,6 +238,10 @@ async def predict_period(request: Dict):
         for space, totals in space_totals.items():
             avg_daily = totals['visits'] / total_days if total_days > 0 else 0
             
+            # 평균 혼잡도 계산
+            crowd_levels = totals.get('crowd_levels', [])
+            avg_crowd_level = sum(crowd_levels) / len(crowd_levels) if crowd_levels else 0
+            
             # 큐레이션 지표 집계
             curation_scores = totals.get('curation_scores', [])
             best_programs = {}
@@ -284,6 +288,7 @@ async def predict_period(request: Dict):
                 'space': space,
                 'total_visits': totals['visits'],
                 'avg_visits': avg_daily,
+                'avg_crowd_level': avg_crowd_level,
                 'trend': trend,
                 'top_program': top_program[0] if top_program else None,
                 'top_program_score': top_program[1].get('avg_score', 0) if top_program and isinstance(top_program[1], dict) else 0,

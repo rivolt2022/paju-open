@@ -79,6 +79,16 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
       alert('올바른 기간을 선택해주세요.')
       return
     }
+    
+    // 최대 1주일(7일) 제한 검증
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+    if (daysDiff > 7) {
+      alert('예측 기간은 최대 7일(1주일)까지만 선택할 수 있습니다.')
+      return
+    }
+    
     setPredicting(true)
     if (onPeriodPredict) {
       await onPeriodPredict(startDate, endDate)
@@ -98,9 +108,9 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
         }
         setPredicting(true)
         try {
-          if (onPeriodPredict) {
-            await onPeriodPredict(startDate, endDate)
-          }
+        if (onPeriodPredict) {
+          await onPeriodPredict(startDate, endDate)
+        }
         } catch (error) {
           console.error('초기 예측 실패:', error)
         } finally {
@@ -166,18 +176,59 @@ export default function HeroSection({ statistics, predictions, trendData, onDate
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      const newStartDate = e.target.value
+                      setStartDate(newStartDate)
+                      // 시작일 변경 시 종료일이 7일을 초과하면 자동 조정
+                      if (newStartDate && endDate) {
+                        const start = new Date(newStartDate)
+                        const end = new Date(endDate)
+                        const maxEndDate = new Date(start)
+                        maxEndDate.setDate(maxEndDate.getDate() + 7)
+                        if (end > maxEndDate) {
+                          setEndDate(maxEndDate.toISOString().split('T')[0])
+                        }
+                        // 종료일이 시작일보다 이전이면 조정
+                        if (end < start) {
+                          setEndDate(newStartDate)
+                        }
+                      }
+                    }}
                     className="date-input"
+                    min={new Date().toISOString().split('T')[0]}
                   />
                   <span className="date-separator">~</span>
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate}
+                    onChange={(e) => {
+                      const newEndDate = e.target.value
+                      // 최대 1주일 제한 검증
+                      if (newEndDate && startDate) {
+                        const start = new Date(startDate)
+                        const end = new Date(newEndDate)
+                        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+                        if (daysDiff > 7) {
+                          alert('예측 기간은 최대 7일(1주일)까지만 선택할 수 있습니다.')
+                          return
+                        }
+                        if (end < start) {
+                          alert('종료일은 시작일 이후여야 합니다.')
+                          return
+                        }
+                      }
+                      setEndDate(newEndDate)
+                    }}
                     className="date-input"
+                    min={startDate}
+                    max={startDate ? (() => {
+                      const maxDate = new Date(startDate)
+                      maxDate.setDate(maxDate.getDate() + 7)
+                      return maxDate.toISOString().split('T')[0]
+                    })() : undefined}
                   />
                 </div>
+                <div className="date-input-hint">최대 1주일만 선택 가능합니다</div>
                 <button
                   className="predict-button"
                   onClick={handlePeriodPredict}

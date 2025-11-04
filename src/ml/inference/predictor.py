@@ -321,23 +321,61 @@ class InferencePredictor:
                         if len(required_features) == 0:
                             required_features = ['year', 'month', 'day_of_week', 'is_weekend', 'season']
                     
+                    # 공간별 특징이 있는지 확인하고 포함
+                    space_features = [col for col in features_df.columns if col.startswith('space_')]
+                    for space_feat in space_features:
+                        if space_feat not in required_features:
+                            required_features.append(space_feat)
+                    
                     # 특징 준비
                     X = self._prepare_features(features_df, required_features, date_obj, space)
+                    
+                    # 공간별 특징이 제대로 설정되었는지 확인 및 수정
+                    space_feature_cols = [col for col in X.columns if col.startswith('space_')]
+                    if space_feature_cols:
+                        # 현재 공간에 해당하는 특징만 1로 설정
+                        current_space_feature = f'space_{space}'
+                        if current_space_feature in X.columns:
+                            X[current_space_feature] = 1
+                            # 다른 공간 특징들은 0으로 설정
+                            for col in space_feature_cols:
+                                if col != current_space_feature:
+                                    X[col] = 0
+                        else:
+                            # 현재 공간 특징이 없으면 생성
+                            X[current_space_feature] = 1
+                            # 다른 공간 특징들은 0으로 설정
+                            for col in space_feature_cols:
+                                X[col] = 0
+                    else:
+                        # 공간 특징이 전혀 없으면 생성
+                        all_spaces = ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터', '출판문화정보원']
+                        for sp in all_spaces:
+                            col_name = f'space_{sp}'
+                            if col_name not in X.columns:
+                                X[col_name] = 0
+                        current_space_feature = f'space_{space}'
+                        if current_space_feature in X.columns:
+                            X[current_space_feature] = 1
                     
                     # 방문인구 예측
                     visit_prediction = self.visit_model.predict(X)
                     if len(visit_prediction) > 0:
                         predicted_visit = max(0, int(visit_prediction[0]))
+                        # 디버그 로그 (공간별로 다른 값 확인)
+                        print(f"[InferencePredictor] {space} {date}: 예측값={predicted_visit}")
                     else:
                         predicted_visit = 30000
                 except Exception as e:
                     print(f"[InferencePredictor] 방문인구 예측 오류 ({space}, {date}): {e}")
+                    import traceback
+                    traceback.print_exc()
                     # 기본값 사용 (날짜와 공간에 따라 약간의 변동 추가)
                     base_visit = 30000
                     # 날짜에 따른 변동 (주말/평일, 계절 등)
                     is_weekend = 1 if date_obj.weekday() >= 5 else 0
                     season = (date_obj.month - 1) // 3 + 1
-                    # 공간별 기본값
+                    # 공간별 기본값 (명확한 차이를 위해)
                     space_multipliers = {
                         '헤이리예술마을': 1.4,
                         '파주출판단지': 0.9,
@@ -351,6 +389,7 @@ class InferencePredictor:
                     season_mult = {1: 0.9, 2: 1.0, 3: 1.1, 4: 1.0}.get(season, 1.0)
                     
                     predicted_visit = int(base_visit * space_mult * weekend_mult * season_mult)
+                    print(f"[InferencePredictor] {space} {date}: 기본값 사용={predicted_visit} (space_mult={space_mult})")
             else:
                 # 모델이 없으면 날짜와 공간에 따라 기본값 계산
                 is_weekend = 1 if date_obj.weekday() >= 5 else 0

@@ -69,8 +69,7 @@
   background: #ffffff;
   padding: 1.5rem;
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #667eea;
+  border: none;
   box-shadow: none;
 }
 
