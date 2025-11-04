@@ -1,0 +1,323 @@
+{
+  "analysis_date": "2025-11-04T15:04:20.554617",
+  "program_success_factors": {
+    "time_based_patterns": {
+      "21-24시": {
+        "population": 504531.8163157895,
+        "recommended_programs": []
+      },
+      "18-21시": {
+        "population": 501049.7722807019,
+        "recommended_programs": []
+      },
+      "15-18시": {
+        "population": 508963.2103508771,
+        "recommended_programs": []
+      },
+      "12-15시": {
+        "population": 513482.11982456176,
+        "recommended_programs": []
+      },
+      "09-12시": {
+        "population": 513051.36263157945,
+        "recommended_programs": []
+      },
+      "06-09시": {
+        "population": 516114.05929824564,
+        "recommended_programs": []
+      },
+      "00-06시": {
+        "population": 507923.6139473683,
+        "recommended_programs": []
+      }
+    },
+    "demographic_patterns": {
+      "헤이리예술마을": {
+        "gender_distribution": {
+          "남성": 146489,
+          "여성": 113003
+        },
+        "recommended_programs": []
+      },
+      "임진각평화누리": {
+        "gender_distribution": {
+          "남성": 146783,
+          "여성": 200644
+        },
+        "recommended_programs": []
+      },
+      "마장호수출렁다리": {
+        "gender_distribution": {
+          "남성": 264830,
+          "여성": 227416
+        },
+        "recommended_programs": []
+      }
+    },
+    "business_patterns": {
+      "cultural_businesses": [],
+      "total_cultural_revenue": 0
+    },
+    "recommendations": [
+      {
+        "type": "time_based",
+        "recommendation": "최적 프로그램 운영 시간: 06-09시",
+        "reason": "해당 시간대 생활인구가 516114명으로 가장 높음"
+      },
+      {
+        "type": "demographic_based",
+        "recommendation": "타겟 고객층 맞춤 프로그램 기획",
+        "reason": "성연령별 방문 패턴 데이터 기반"
+      }
+    ]
+  },
+  "optimal_timing": {
+    "weekday_patterns": {
+      "best_days": {
+        "일요일": 6931.62875,
+        "토요일": 6630.24625
+      },
+      "worst_days": {
+        "월요일": 2496.1175,
+        "화요일": 2616.37625
+      },
+      "weekend_ratio": 2.512136610218092
+    },
+    "time_slot_patterns": {},
+    "seasonal_patterns": {
+      "가을": 53957.31333333333,
+      "겨울": 30388.02,
+      "봄": 47798.88333333333,
+      "여름": 41455.668000000005
+    },
+    "recommendations": []
+  },
+  "target_demographics": {
+    "age_gender_distribution": {
+      "age_groups": {
+        "20대": 566799,
+        "20대미만": 557825,
+        "30대": 809336,
+        "40대": 800259,
+        "50대": 875572,
+        "60대": 781253,
+        "70대이상": 460629
+      },
+      "top_age_group": "50대",
+      "recommendations": []
+    },
+    "consumption_patterns": {
+      "peak_spending_time": "unknown",
+      "peak_spending_day": "unknown",
+      "recommendations": []
+    },
+    "regional_distribution": {
+      "top_regions": {
+        "경기도": 3.2691,
+        "서울특별시": 1.0643,
+        "인천광역시": 0.3211,
+        "충청남도": 0.0455,
+        "충청북도": 0.043000000000000003
+      },
+      "recommendations": []
+    },
+    "program_recommendations": {}
+  },
+  "program_suitability": {
+    "program_types": {
+      "북토크": {
+        "suitability_score": 68.39962026581394,
+        "matching_businesses": [
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 21.17,
+            "match_score": 0.75
+          },
+          {
+            "business": "기타 전문, 과학 및 기술 서비스업",
+            "revenue": 15.17,
+            "match_score": 0.25
+          },
+          {
+            "business": "사업 지원 서비스업",
+            "revenue": 7.75,
+            "match_score": 0.25
+          },
+          {
+            "business": "스포츠 및 오락관련 서비스업",
+            "revenue": 2.92,
+            "match_score": 0.25
+          },
+          {
+            "business": "기타 개인 서비스업",
+            "revenue": 2.0,
+            "match_score": 0.25
+          }
+        ],
+        "recommendation": "추천"
+      },
+      "작가 사인회": {
+        "suitability_score": 100,
+        "matching_businesses": [
+          {
+            "business": "소매업_자동차 제외",
+            "revenue": 71.17,
+            "match_score": 0.3333333333333333
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 21.17,
+            "match_score": 0.6666666666666666
+          },
+          {
+            "business": "소매업_자동차 제외",
+            "revenue": 81.83,
+            "match_score": 0.3333333333333333
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 12.75,
+            "match_score": 0.6666666666666666
+          },
+          {
+            "business": "소매업_자동차 제외",
+            "revenue": 131.25,
+            "match_score": 0.3333333333333333
+          }
+        ],
+        "recommendation": "추천"
+      },
+      "전시회": {
+        "suitability_score": 29.114619766163692,
+        "matching_businesses": [
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 21.17,
+            "match_score": 1.0
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 12.75,
+            "match_score": 1.0
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 7.5,
+            "match_score": 1.0
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 7.42,
+            "match_score": 1.0
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 9.43,
+            "match_score": 1.0
+          }
+        ],
+        "recommendation": "검토 필요"
+      },
+      "문화 프로그램": {
+        "suitability_score": 22.17197961427001,
+        "matching_businesses": [
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 21.17,
+            "match_score": 0.75
+          },
+          {
+            "business": "교육 서비스업",
+            "revenue": 0.42,
+            "match_score": 0.25
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 12.75,
+            "match_score": 0.75
+          },
+          {
+            "business": "교육 서비스업",
+            "revenue": 0.0,
+            "match_score": 0.25
+          },
+          {
+            "business": "창작, 예술 및 여가관련 서비스업",
+            "revenue": 7.5,
+            "match_score": 0.75
+          }
+        ],
+        "recommendation": "검토 필요"
+      }
+    },
+    "time_slot_suitability": {
+      "북토크": {
+        "optimal_times": [
+          "오후",
+          "저녁"
+        ],
+        "score": 75.0
+      },
+      "작가 사인회": {
+        "optimal_times": [
+          "오후",
+          "주말"
+        ],
+        "score": 75.0
+      },
+      "전시회": {
+        "optimal_times": [
+          "전체"
+        ],
+        "score": 75.0
+      },
+      "문화 프로그램": {
+        "optimal_times": [
+          "주말",
+          "오후"
+        ],
+        "score": 75.0
+      }
+    },
+    "demographic_suitability": {
+      "북토크": {
+        "target_age_groups": [
+          "30대",
+          "40대",
+          "50대"
+        ],
+        "score": 70.0
+      },
+      "작가 사인회": {
+        "target_age_groups": [
+          "20대",
+          "30대",
+          "40대"
+        ],
+        "score": 70.0
+      },
+      "전시회": {
+        "target_age_groups": [
+          "20대",
+          "30대",
+          "40대",
+          "50대"
+        ],
+        "score": 70.0
+      },
+      "문화 프로그램": {
+        "target_age_groups": [
+          "전체"
+        ],
+        "score": 70.0
+      }
+    },
+    "space_suitability": {}
+  },
+  "curation_insights": [
+    "[OK] 시간대별 방문 패턴 데이터가 큐레이션에 활용 가능합니다",
+    "[OK] 성연령별 관심도 데이터로 타겟 고객층 분석 가능합니다",
+    "[TIMING] 주말 방문이 평일보다 2.5배 높아 주말 프로그램 집중 권장",
+    "[RECOMMEND] 추천 프로그램 타입: 작가 사인회, 북토크, 전시회"
+  ]
+}

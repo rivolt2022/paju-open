@@ -315,6 +315,275 @@
   gap: 1.5rem;
 }
 
+/* 종합 분석 카드 (LLM 강화) */
+.comprehensive-analysis-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.comprehensive-analysis-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.card-title-icon {
+  font-size: 1.75rem;
+  color: #667eea;
+}
+
+.analysis-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #6b7280;
+}
+
+.loading-icon {
+  font-size: 3rem;
+  color: #667eea;
+  animation: pulse 2s infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.comprehensive-analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.analysis-section {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.section-icon {
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.analysis-summary {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0;
+}
+
+/* 종합 결과 요약 */
+.comprehensive-result-summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  color: white;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.result-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+}
+
+.result-icon {
+  font-size: 2rem;
+  color: white;
+}
+
+.result-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.score-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+}
+
+.score-unit {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.result-summary-text {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: white;
+  margin: 0;
+  opacity: 0.95;
+}
+
+/* 서술형 분석 */
+.detailed-analysis-section {
+  background: #ffffff;
+  border-left: 4px solid #667eea;
+}
+
+.detailed-analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.analysis-paragraph {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: #374151;
+  margin: 0;
+  text-align: justify;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.analysis-paragraph:last-child {
+  border-bottom: none;
+}
+
+.analysis-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.analysis-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.list-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.list-icon.success {
+  color: #10b981;
+}
+
+.list-icon.warning {
+  color: #f59e0b;
+}
+
+.list-icon.opportunity {
+  color: #3b82f6;
+}
+
+.list-icon.recommendation {
+  color: #667eea;
+}
+
+.analysis-list.recommendations li {
+  border-left: 3px solid #667eea;
+  background: #f0f4ff;
+}
+
+.action-plan-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.action-plan-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #374151;
+  padding-top: 0.25rem;
+}
+
 @media (max-width: 768px) {
   .metrics-grid {
     grid-template-columns: 1fr;
@@ -326,5 +595,43 @@
 
   .program-readiness-grid {
     grid-template-columns: 1fr;
+  }
+
+  .comprehensive-analysis-card {
+    padding: 1.5rem;
+  }
+
+  .analysis-section {
+    padding: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+  }
+
+  .comprehensive-result-summary {
+    padding: 1.5rem;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-title {
+    font-size: 1.25rem;
+  }
+
+  .score-value {
+    font-size: 1.75rem;
+  }
+
+  .result-summary-text {
+    font-size: 1rem;
+  }
+
+  .analysis-paragraph {
+    font-size: 0.95rem;
+    line-height: 1.7;
   }
 }

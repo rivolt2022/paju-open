@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MdRocketLaunch, MdAccessTime, MdGpsFixed, MdBarChart, MdLightbulb } from 'react-icons/md'
 import './InsightCards.css'
 
-function InsightCards({ predictions, statistics, modelMetrics, onMetricClick }) {
+function InsightCards({ predictions, statistics, onMetricClick }) {
   const [activeCard, setActiveCard] = useState(0)
 
   useEffect(() => {
@@ -33,13 +33,11 @@ function InsightCards({ predictions, statistics, modelMetrics, onMetricClick }) 
     {
       icon: <MdGpsFixed />,
       title: '예측 신뢰도',
-      value: (() => {
-        const r2 = modelMetrics?.final_r2 || modelMetrics?.cv_r2_mean || modelMetrics?.r2
-        return r2 ? `${(r2 * 100).toFixed(1)}%` : '95.0%'
-      })(),
+      value: statistics?.model_accuracy 
+        ? `${(statistics.model_accuracy * 100).toFixed(1)}%`
+        : '95.0%',
       description: (() => {
-        const r2 = modelMetrics?.final_r2 || modelMetrics?.cv_r2_mean || modelMetrics?.r2
-        const accuracy = (r2 || 0) * 100
+        const accuracy = statistics?.model_accuracy ? (statistics.model_accuracy * 100) : 95
         if (accuracy >= 99) return '날씨 예보 수준으로 매우 신뢰할 수 있는 예측입니다'
         if (accuracy >= 95) return '날씨 예보처럼 신뢰할 수 있는 예측입니다'
         return '신뢰할 수 있는 예측입니다'
@@ -92,8 +90,8 @@ function InsightCards({ predictions, statistics, modelMetrics, onMetricClick }) 
                                  insight.title === '평균 혼잡도' ? 'avg_crowd_level' : 'general'
               
               let metricValue = insight.value
-              if (insight.title === '예측 정확도') {
-                metricValue = modelMetrics?.final_r2 || modelMetrics?.r2 || 0.95
+              if (insight.title === '예측 신뢰도') {
+                metricValue = statistics?.model_accuracy || 0.95
               } else if (insight.title === '평균 혼잡도') {
                 metricValue = statistics?.avg_crowd_level || 0.4
               }

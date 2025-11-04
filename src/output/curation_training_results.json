@@ -1,0 +1,776 @@
+{
+  "training_date": "2025-11-04T15:08:49.175299",
+  "model_type": "Random Forest (Curation Focused)",
+  "validation_method": "K-Fold Cross Validation (5 folds)",
+  "results": {
+    "북토크_score": {
+      "target": "북토크_recommendation_score",
+      "results": {
+        "cv_mae_mean": 0.20788391964040448,
+        "cv_mae_std": 0.05313579435324689,
+        "cv_rmse_mean": 0.3193139212433845,
+        "cv_rmse_std": 0.2350100447976108,
+        "cv_r2_mean": 0.997170143837703,
+        "cv_r2_std": 0.001686792668667609,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.28239520222908554,
+            "rmse": 0.44306439121219954,
+            "r2": 0.9945194610244746
+          },
+          {
+            "fold": 2,
+            "mae": 0.1462928895638044,
+            "rmse": 0.23325188527414795,
+            "r2": 0.9984875476971037
+          },
+          {
+            "fold": 3,
+            "mae": 0.16525328563272895,
+            "rmse": 0.26192577960862473,
+            "r2": 0.9985899513194194
+          },
+          {
+            "fold": 4,
+            "mae": 0.2581859201786647,
+            "rmse": 0.3650120495613169,
+            "r2": 0.995814424174128
+          },
+          {
+            "fold": 5,
+            "mae": 0.18729230059773885,
+            "rmse": 0.23928120362120234,
+            "r2": 0.9984393349733891
+          }
+        ],
+        "final_mae": 0.07674118498469613,
+        "final_rmse": 0.12914571205879416,
+        "final_r2": 0.9995736774201102,
+        "final_mape": 0.039008467032832714,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.08839997047709021,
+        "max": 16.864371752479922,
+        "mean": 7.98242647977809,
+        "std": 6.28213576716174
+      }
+    },
+    "북토크_suitability": {
+      "target": "북토크_time_suitability",
+      "results": {
+        "cv_mae_mean": -0.0,
+        "cv_mae_std": 0.0,
+        "cv_rmse_mean": -0.0,
+        "cv_rmse_std": 0.0,
+        "cv_r2_mean": 1.0,
+        "cv_r2_std": 0.0,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 2,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 3,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 4,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 5,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          }
+        ],
+        "final_mae": 0.0,
+        "final_rmse": 0.0,
+        "final_r2": 1.0,
+        "final_mape": 0.0,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 90.0,
+        "max": 90.0,
+        "mean": 90.0,
+        "std": 0.0
+      }
+    },
+    "북토크_match": {
+      "target": "북토크_demographic_match",
+      "results": {
+        "cv_mae_mean": 0.7016408380615935,
+        "cv_mae_std": 0.11038597541121521,
+        "cv_rmse_mean": 1.2718506253703996,
+        "cv_rmse_std": 0.6366905412835365,
+        "cv_r2_mean": 0.9981886197436796,
+        "cv_r2_std": 0.00060652430946751,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.8148964596398756,
+            "rmse": 1.3082717472263683,
+            "r2": 0.9980583860373561
+          },
+          {
+            "fold": 2,
+            "mae": 0.761166670890976,
+            "rmse": 1.3784349035433616,
+            "r2": 0.9979353004472651
+          },
+          {
+            "fold": 3,
+            "mae": 0.5811096823671492,
+            "rmse": 1.300592204775977,
+            "r2": 0.9985266919761046
+          },
+          {
+            "fold": 4,
+            "mae": 0.7952285762598821,
+            "rmse": 1.397115851533912,
+            "r2": 0.9973050213066769
+          },
+          {
+            "fold": 5,
+            "mae": 0.5558028011500845,
+            "rmse": 0.9126278171558687,
+            "r2": 0.9991176989509951
+          }
+        ],
+        "final_mae": 0.26274241973704393,
+        "final_rmse": 0.457273864149512,
+        "final_r2": 0.9997832432718307,
+        "final_mape": 0.02409773610577713,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.6727,
+        "max": 77.0,
+        "mean": 44.73092521739131,
+        "std": 31.195114260037286
+      }
+    },
+    "작가 사인회_score": {
+      "target": "작가 사인회_recommendation_score",
+      "results": {
+        "cv_mae_mean": 0.4234855070277459,
+        "cv_mae_std": 0.11916671280198093,
+        "cv_rmse_mean": 0.6739016717040386,
+        "cv_rmse_std": 0.46594443676230946,
+        "cv_r2_mean": 0.9944656079821815,
+        "cv_r2_std": 0.0029103698264034607,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.27924377894438934,
+            "rmse": 0.42321683814771266,
+            "r2": 0.997614139646449
+          },
+          {
+            "fold": 2,
+            "mae": 0.3323497799187373,
+            "rmse": 0.5263413695200618,
+            "r2": 0.9965466902503602
+          },
+          {
+            "fold": 3,
+            "mae": 0.3988711004434433,
+            "rmse": 0.645596480903256,
+            "r2": 0.9962286253746426
+          },
+          {
+            "fold": 4,
+            "mae": 0.6146712132770095,
+            "rmse": 0.871775681395302,
+            "r2": 0.9914939020962349
+          },
+          {
+            "fold": 5,
+            "mae": 0.4922916625551501,
+            "rmse": 0.798612503934528,
+            "r2": 0.9904446825432203
+          }
+        ],
+        "final_mae": 0.13772740166634329,
+        "final_rmse": 0.22713785911457504,
+        "final_r2": 0.9994186534834028,
+        "final_mape": 0.029725940281793893,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.12953381849257242,
+        "max": 29.899737769768056,
+        "mean": 11.695723636896453,
+        "std": 9.461684998287659
+      }
+    },
+    "작가 사인회_suitability": {
+      "target": "작가 사인회_time_suitability",
+      "results": {
+        "cv_mae_mean": -0.0,
+        "cv_mae_std": 0.0,
+        "cv_rmse_mean": -0.0,
+        "cv_rmse_std": 0.0,
+        "cv_r2_mean": 1.0,
+        "cv_r2_std": 0.0,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 2,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 3,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 4,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 5,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          }
+        ],
+        "final_mae": 0.0,
+        "final_rmse": 0.0,
+        "final_r2": 1.0,
+        "final_mape": 0.0,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 60.0,
+        "max": 90.0,
+        "mean": 69.1304347826087,
+        "std": 13.864331200381331
+      }
+    },
+    "작가 사인회_match": {
+      "target": "작가 사인회_demographic_match",
+      "results": {
+        "cv_mae_mean": 0.7016408380615928,
+        "cv_mae_std": 0.11038597541121657,
+        "cv_rmse_mean": 1.2718506253703987,
+        "cv_rmse_std": 0.6366905412835391,
+        "cv_r2_mean": 0.9981886197436796,
+        "cv_r2_std": 0.00060652430946751,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.8148964596398756,
+            "rmse": 1.3082717472263683,
+            "r2": 0.9980583860373561
+          },
+          {
+            "fold": 2,
+            "mae": 0.7611666708909758,
+            "rmse": 1.3784349035433612,
+            "r2": 0.9979353004472651
+          },
+          {
+            "fold": 3,
+            "mae": 0.5811096823671474,
+            "rmse": 1.3005922047759764,
+            "r2": 0.9985266919761046
+          },
+          {
+            "fold": 4,
+            "mae": 0.7952285762598837,
+            "rmse": 1.3971158515339124,
+            "r2": 0.9973050213066769
+          },
+          {
+            "fold": 5,
+            "mae": 0.5558028011500818,
+            "rmse": 0.9126278171558643,
+            "r2": 0.9991176989509951
+          }
+        ],
+        "final_mae": 0.2627424197370436,
+        "final_rmse": 0.457273864149512,
+        "final_r2": 0.9997832432718307,
+        "final_mape": 0.024097736105777093,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.6727,
+        "max": 77.0,
+        "mean": 44.73092521739131,
+        "std": 31.195114260037286
+      }
+    },
+    "전시회_score": {
+      "target": "전시회_recommendation_score",
+      "results": {
+        "cv_mae_mean": 0.8955683828262867,
+        "cv_mae_std": 0.25822242187481526,
+        "cv_rmse_mean": 1.3700811964844797,
+        "cv_rmse_std": 1.012867416837779,
+        "cv_r2_mean": 0.9971814972709563,
+        "cv_r2_std": 0.0017289471539210588,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 1.2015955125103774,
+            "rmse": 1.8423960551297605,
+            "r2": 0.994895658459711
+          },
+          {
+            "fold": 2,
+            "mae": 0.586695270800112,
+            "rmse": 0.9889838448968312,
+            "r2": 0.9985354846859079
+          },
+          {
+            "fold": 3,
+            "mae": 0.726266623823783,
+            "rmse": 1.1360459426850704,
+            "r2": 0.9985712588072789
+          },
+          {
+            "fold": 4,
+            "mae": 1.2062067034151855,
+            "rmse": 1.6768652037071112,
+            "r2": 0.9952420346244599
+          },
+          {
+            "fold": 5,
+            "mae": 0.7570778035819754,
+            "rmse": 0.9542656129622358,
+            "r2": 0.9986630497774235
+          }
+        ],
+        "final_mae": 0.3293111771303827,
+        "final_rmse": 0.5561302736686261,
+        "final_r2": 0.9995741902636769,
+        "final_mape": 0.030364778809231698,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.38089918186112415,
+        "max": 72.66547000472364,
+        "mean": 34.394804647610435,
+        "std": 27.068565307638277
+      }
+    },
+    "전시회_suitability": {
+      "target": "전시회_time_suitability",
+      "results": {
+        "cv_mae_mean": -0.0,
+        "cv_mae_std": 0.0,
+        "cv_rmse_mean": -0.0,
+        "cv_rmse_std": 0.0,
+        "cv_r2_mean": 1.0,
+        "cv_r2_std": 0.0,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 2,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 3,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 4,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 5,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          }
+        ],
+        "final_mae": 0.0,
+        "final_rmse": 0.0,
+        "final_r2": 1.0,
+        "final_mape": 0.0,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 75.0,
+        "max": 75.0,
+        "mean": 75.0,
+        "std": 0.0
+      }
+    },
+    "전시회_match": {
+      "target": "전시회_demographic_match",
+      "results": {
+        "cv_mae_mean": 0.7016408380615928,
+        "cv_mae_std": 0.11038597541121525,
+        "cv_rmse_mean": 1.271850625370399,
+        "cv_rmse_std": 0.6366905412835367,
+        "cv_r2_mean": 0.9981886197436796,
+        "cv_r2_std": 0.00060652430946751,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.8148964596398737,
+            "rmse": 1.3082717472263645,
+            "r2": 0.9980583860373561
+          },
+          {
+            "fold": 2,
+            "mae": 0.7611666708909751,
+            "rmse": 1.3784349035433616,
+            "r2": 0.9979353004472651
+          },
+          {
+            "fold": 3,
+            "mae": 0.5811096823671484,
+            "rmse": 1.3005922047759764,
+            "r2": 0.9985266919761046
+          },
+          {
+            "fold": 4,
+            "mae": 0.7952285762598833,
+            "rmse": 1.3971158515339135,
+            "r2": 0.9973050213066769
+          },
+          {
+            "fold": 5,
+            "mae": 0.555802801150084,
+            "rmse": 0.9126278171558687,
+            "r2": 0.9991176989509951
+          }
+        ],
+        "final_mae": 0.26274241973704415,
+        "final_rmse": 0.4572738641495123,
+        "final_r2": 0.9997832432718307,
+        "final_mape": 0.024097736105777097,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.6727,
+        "max": 77.0,
+        "mean": 44.73092521739131,
+        "std": 31.195114260037286
+      }
+    },
+    "문화 프로그램_score": {
+      "target": "문화 프로그램_recommendation_score",
+      "results": {
+        "cv_mae_mean": 0.6534807886845581,
+        "cv_mae_std": 0.19427116988827456,
+        "cv_rmse_mean": 1.0482885252991925,
+        "cv_rmse_std": 0.7435419142014502,
+        "cv_r2_mean": 0.9939755499484392,
+        "cv_r2_std": 0.0032507858325649605,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.42504452599720194,
+            "rmse": 0.6672800282061243,
+            "r2": 0.9973350416811082
+          },
+          {
+            "fold": 2,
+            "mae": 0.5232902355699369,
+            "rmse": 0.8195751738964264,
+            "r2": 0.9962378757443621
+          },
+          {
+            "fold": 3,
+            "mae": 0.5896968752725257,
+            "rmse": 0.9601970692582174,
+            "r2": 0.9962515377470641
+          },
+          {
+            "fold": 4,
+            "mae": 0.979337649858828,
+            "rmse": 1.3953794838458597,
+            "r2": 0.9902082443449111
+          },
+          {
+            "fold": 5,
+            "mae": 0.7500346567242973,
+            "rmse": 1.228216489023676,
+            "r2": 0.9898450502247506
+          }
+        ],
+        "final_mae": 0.2138377850634294,
+        "final_rmse": 0.34619138757637363,
+        "final_r2": 0.9993932028096404,
+        "final_mape": 0.04059560786603587,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.19324383882853094,
+        "max": 44.60564950401511,
+        "mean": 17.448158015978315,
+        "std": 14.11532796711518
+      }
+    },
+    "문화 프로그램_suitability": {
+      "target": "문화 프로그램_time_suitability",
+      "results": {
+        "cv_mae_mean": -0.0,
+        "cv_mae_std": 0.0,
+        "cv_rmse_mean": -0.0,
+        "cv_rmse_std": 0.0,
+        "cv_r2_mean": 1.0,
+        "cv_r2_std": 0.0,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 2,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 3,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 4,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          },
+          {
+            "fold": 5,
+            "mae": 0.0,
+            "rmse": 0.0,
+            "r2": 1.0
+          }
+        ],
+        "final_mae": 0.0,
+        "final_rmse": 0.0,
+        "final_r2": 1.0,
+        "final_mape": 0.0,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 60.0,
+        "max": 90.0,
+        "mean": 69.1304347826087,
+        "std": 13.864331200381331
+      }
+    },
+    "문화 프로그램_match": {
+      "target": "문화 프로그램_demographic_match",
+      "results": {
+        "cv_mae_mean": 0.7016408380615925,
+        "cv_mae_std": 0.11038597541121549,
+        "cv_rmse_mean": 1.2718506253703985,
+        "cv_rmse_std": 0.6366905412835376,
+        "cv_r2_mean": 0.9981886197436796,
+        "cv_r2_std": 0.00060652430946751,
+        "cv_folds": [
+          {
+            "fold": 1,
+            "mae": 0.8148964596398754,
+            "rmse": 1.3082717472263674,
+            "r2": 0.9980583860373561
+          },
+          {
+            "fold": 2,
+            "mae": 0.7611666708909742,
+            "rmse": 1.3784349035433592,
+            "r2": 0.9979353004472651
+          },
+          {
+            "fold": 3,
+            "mae": 0.5811096823671483,
+            "rmse": 1.3005922047759746,
+            "r2": 0.9985266919761046
+          },
+          {
+            "fold": 4,
+            "mae": 0.7952285762598814,
+            "rmse": 1.3971158515339137,
+            "r2": 0.9973050213066769
+          },
+          {
+            "fold": 5,
+            "mae": 0.555802801150083,
+            "rmse": 0.9126278171558664,
+            "r2": 0.9991176989509951
+          }
+        ],
+        "final_mae": 0.26274241973704404,
+        "final_rmse": 0.45727386414951193,
+        "final_r2": 0.9997832432718307,
+        "final_mape": 0.024097736105777104,
+        "n_features": 55,
+        "n_samples": 115,
+        "cv_folds_used": 5
+      },
+      "n_features": 55,
+      "n_samples": 115,
+      "target_range": {
+        "min": 0.6727,
+        "max": 77.0,
+        "mean": 44.73092521739131,
+        "std": 31.195114260037286
+      }
+    }
+  },
+  "n_features": 55,
+  "feature_names": [
+    "연도",
+    "월",
+    "북토크_recommendation_score",
+    "작가 사인회_recommendation_score",
+    "전시회_recommendation_score",
+    "문화 프로그램_recommendation_score",
+    "북토크_time_suitability",
+    "작가 사인회_time_suitability",
+    "전시회_time_suitability",
+    "문화 프로그램_time_suitability",
+    "북토크_demographic_match",
+    "작가 사인회_demographic_match",
+    "전시회_demographic_match",
+    "문화 프로그램_demographic_match",
+    "year",
+    "month",
+    "day",
+    "day_of_week",
+    "day_of_year",
+    "week_of_year",
+    "quarter",
+    "is_weekend",
+    "season",
+    "is_holiday",
+    "is_month_start",
+    "is_month_end",
+    "avg_life_population",
+    "life_population_normalized",
+    "거주인구",
+    "근무인구",
+    "resident_ratio",
+    "worker_ratio",
+    "visitor_ratio",
+    "morning_population",
+    "afternoon_population",
+    "evening_population",
+    "estimated_consumption",
+    "regional_vitality",
+    "population_vitality",
+    "consumption_vitality",
+    "방문인구(명)_lag_1",
+    "방문인구(명)_lag_7",
+    "방문인구(명)_lag_30",
+    "방문인구(명)_rolling_mean_7",
+    "방문인구(명)_rolling_std_7",
+    "방문인구(명)_rolling_max_7",
+    "방문인구(명)_rolling_min_7",
+    "방문인구(명)_rolling_mean_30",
+    "방문인구(명)_rolling_std_30",
+    "방문인구(명)_rolling_max_30",
+    "방문인구(명)_rolling_min_30",
+    "방문인구(명)_rolling_mean_90",
+    "방문인구(명)_rolling_std_90",
+    "방문인구(명)_rolling_max_90",
+    "방문인구(명)_rolling_min_90"
+  ],
+  "program_types": [
+    "북토크",
+    "작가 사인회",
+    "전시회",
+    "문화 프로그램"
+  ],
+  "data_sources": {
+    "visit_data_rows": 115,
+    "revenue_data_rows": 108,
+    "life_population_rows": 38,
+    "time_slot_rows": 26,
+    "weekend_pattern_rows": 63,
+    "consumption_pattern_rows": 26,
+    "vitality_index_rows": 40
+  }
+}

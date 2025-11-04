@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MdPeople, MdGpsFixed, MdBusiness, MdAccessTime, MdLightbulb, MdCalendarToday, MdMenuBook, MdDateRange, MdPlayArrow } from 'react-icons/md'
 import './HeroSection.css'
 
-export default function HeroSection({ statistics, modelMetrics, onDateChange, onTimeSlotChange, selectedDate, selectedTimeSlot, onPeriodPredict }) {
+export default function HeroSection({ statistics, onDateChange, onTimeSlotChange, selectedDate, selectedTimeSlot, onPeriodPredict }) {
   const [animatedValue, setAnimatedValue] = useState(0)
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -40,14 +40,10 @@ export default function HeroSection({ statistics, modelMetrics, onDateChange, on
     })
   }
 
-  // 실제 학습 결과에서 모델 정확도 가져오기
-  const modelAccuracy = modelMetrics?.final_r2 
-    ? (modelMetrics.final_r2 * 100).toFixed(1) 
-    : modelMetrics?.cv_r2_mean
-      ? (modelMetrics.cv_r2_mean * 100).toFixed(1)
-      : modelMetrics?.r2 
-        ? (modelMetrics.r2 * 100).toFixed(1) 
-        : '95.0'
+  // statistics에서 모델 정확도 가져오기 (큐레이션에 필요한 정보만)
+  const modelAccuracy = statistics?.model_accuracy 
+    ? (statistics.model_accuracy * 100).toFixed(1) 
+    : '95.0'
   
   // 정확도 레벨 결정
   const accuracyLevel = parseFloat(modelAccuracy) >= 99 ? 'excellent' : parseFloat(modelAccuracy) >= 95 ? 'high' : 'good'

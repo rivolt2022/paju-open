@@ -59,10 +59,10 @@ app.add_middleware(
 # 모든 API 요청에서 이 인스턴스를 재사용
 print("\n[Backend] ML 모델 로드 중...")
 try:
-    predictor = InferencePredictor()  # 학습된 시공간 예측 모델 로드
-    print(f"[Backend] ML 모델 로드 완료 (model_loaded: {predictor.model_loaded})")
+    predictor = InferencePredictor()  # 학습된 큐레이션 중심 예측 모델 로드
+    print(f"[Backend] 큐레이션 모델 로드 완료 (로드된 모델 수: {len(predictor.models)})")
 except Exception as e:
-    print(f"[Backend] ML 모델 로드 실패: {e}")
+    print(f"[Backend] 큐레이션 모델 로드 실패: {e}")
     print("[Backend] 기본값으로 동작합니다.")
 
 print("[Backend] 생성형 AI 초기화 중...")
@@ -185,11 +185,17 @@ async def predict_period(request: Dict):
             
             all_predictions[date_str] = daily_predictions
             
-            # 공간별 집계
+            # 공간별 집계 (큐레이션 지표 기반)
             for pred in daily_predictions:
                 space = pred.get('space', '')
                 if space in space_totals:
                     space_totals[space]['visits'] += pred.get('predicted_visit', 0)
+                    # 큐레이션 지표 추출
+                    curation_metrics = pred.get('curation_metrics', {})
+                    if 'curation_scores' not in space_totals[space]:
+                        space_totals[space]['curation_scores'] = []
+                    space_totals[space]['curation_scores'].append(curation_metrics)
+                    # 호환성을 위해 crowd_level 유지
                     space_totals[space]['crowd_levels'].append(pred.get('crowd_level', 0))
             
             current_date += timedelta(days=1)
@@ -202,11 +208,40 @@ async def predict_period(request: Dict):
             'avg_daily_visits': sum(st['visits'] for st in space_totals.values()) / total_days if total_days > 0 else 0
         }
         
-        # 공간별 요약
+        # 공간별 요약 (큐레이션 지표 기반)
         space_summaries = []
         for space, totals in space_totals.items():
-            avg_crowd = sum(totals['crowd_levels']) / len(totals['crowd_levels']) if totals['crowd_levels'] else 0
             avg_daily = totals['visits'] / total_days if total_days > 0 else 0
+            
+            # 큐레이션 지표 집계
+            curation_scores = totals.get('curation_scores', [])
+            best_programs = {}
+            if curation_scores:
+                # 각 프로그램 타입별 최고 점수 계산
+                for day_metrics in curation_scores:
+                    for prog_type, metrics in day_metrics.items():
+                        if prog_type not in best_programs:
+                            best_programs[prog_type] = {
+                                'scores': [],
+                                'count': 0
+                            }
+                        if isinstance(metrics, dict) and 'overall_score' in metrics:
+                            best_programs[prog_type]['scores'].append(metrics['overall_score'])
+                            best_programs[prog_type]['count'] += 1
+                
+                # 평균 점수 계산
+                for prog_type, data in best_programs.items():
+                    if data['scores']:
+                        best_programs[prog_type] = {
+                            'avg_score': sum(data['scores']) / len(data['scores']),
+                            'count': data['count']
+                        }
+            
+            # 최고 점수 프로그램 찾기
+            top_program = None
+            if best_programs:
+                top_program = max(best_programs.items(), 
+                                key=lambda x: x[1].get('avg_score', 0) if isinstance(x[1], dict) else 0)
             
             # 트렌드 계산 (첫날과 마지막날 비교)
             first_day_preds = all_predictions.get(start_date, [])
@@ -224,8 +259,10 @@ async def predict_period(request: Dict):
                 'space': space,
                 'total_visits': totals['visits'],
                 'avg_visits': avg_daily,
-                'avg_crowd_level': avg_crowd,
-                'trend': trend
+                'trend': trend,
+                'top_program': top_program[0] if top_program else None,
+                'top_program_score': top_program[1].get('avg_score', 0) if top_program and isinstance(top_program[1], dict) else 0,
+                'program_metrics': best_programs
             })
         
         return {
@@ -590,6 +627,156 @@ async def get_publishing_vitality():
     except Exception as e:
         print(f"[API] 출판단지 활성화 지수 조회 오류: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/analytics/comprehensive-publishing-analysis")
+async def comprehensive_publishing_analysis(request: Dict):
+    """출판단지 활성화 종합 분석 (LLM 강화)"""
+    try:
+        space_name = request.get('space_name', '헤이리예술마을')
+        activation_scores = request.get('activation_scores', {})
+        metrics = request.get('metrics', {})
+        vitality = request.get('vitality', {})
+        
+        # 데이터 요약
+        activation_overall = activation_scores.get('overall', 0)
+        vitality_score = vitality.get('overall_publishing_complex_vitality', 0) * 100
+        weekend_ratio = metrics.get('weekend_analysis', {}).get('weekend_ratio', 1.0)
+        demographic_targeting = metrics.get('demographic_targeting', {})
+        
+        # LLM 프롬프트 생성
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 전문 AI 분석가입니다. 
+다음 데이터를 종합적으로 분석하여 출판단지 활성화를 위한 실행 가능한 전략을 제시해주세요.
+
+**현재 상태 데이터**:
+- 문화 공간 활성화 점수: {activation_overall:.1f}점 / 100점
+- 출판단지 활성화 지수: {vitality_score:.1f}점 / 100점
+- 주말/평일 비율: {weekend_ratio:.2f}배
+- 성연령별 타겟팅: {json.dumps(demographic_targeting, ensure_ascii=False, indent=2) if demographic_targeting else '데이터 없음'}
+
+**활성화 점수 세부**:
+{json.dumps(activation_scores, ensure_ascii=False, indent=2) if activation_scores else '데이터 없음'}
+
+**지역별 활성화 지수**:
+{json.dumps(vitality.get('regional_indices', {}), ensure_ascii=False, indent=2) if vitality.get('regional_indices') else '데이터 없음'}
+
+**요구사항**:
+1. **분석 요약**: 전체적인 출판단지 활성화 상태를 한 문단으로 요약 (100-150자)
+2. **서술형 분석**: 현재 상태에 대한 상세한 서술형 분석 (3-5개 문단, 각 100-200자)
+   - 현재 활성화 상태에 대한 종합 평가
+   - 주요 지표들의 의미와 해석
+   - 트렌드 및 패턴 분석
+   - 지역별 특성 및 차이점
+   - 데이터가 시사하는 바
+3. **주요 강점**: 현재 활성화에 기여하는 강점 3-5개를 구체적으로 제시
+4. **개선 필요 영역**: 활성화를 저해하는 요인 3-5개를 구체적으로 제시
+5. **활성화 기회**: 데이터에서 발견할 수 있는 새로운 활성화 기회 3-5개
+6. **실행 가능한 추천사항**: 즉시 실행 가능한 구체적인 추천사항 5-7개
+7. **단계별 실행 계획**: 우선순위가 높은 5단계 실행 계획
+
+**응답 형식** (JSON):
+{{
+  "summary": "분석 요약 (100-150자)",
+  "detailed_analysis": [
+    "첫 번째 문단: 현재 활성화 상태에 대한 종합 평가 (100-200자)",
+    "두 번째 문단: 주요 지표들의 의미와 해석 (100-200자)",
+    "세 번째 문단: 트렌드 및 패턴 분석 (100-200자)",
+    "네 번째 문단: 지역별 특성 및 차이점 (100-200자)",
+    "다섯 번째 문단: 데이터가 시사하는 바 및 전망 (100-200자)"
+  ],
+  "strengths": ["강점 1", "강점 2", "강점 3"],
+  "weaknesses": ["개선점 1", "개선점 2", "개선점 3"],
+  "opportunities": ["기회 1", "기회 2", "기회 3"],
+  "recommendations": ["추천 1", "추천 2", "추천 3", "추천 4", "추천 5"],
+  "action_plan": ["1단계: ...", "2단계: ...", "3단계: ...", "4단계: ...", "5단계: ..."]
+}}
+
+**중요**: 
+- 모든 내용은 출판단지 활성화에 초점을 맞추세요
+- 구체적이고 실행 가능한 내용으로 작성하세요
+- 각 항목은 50-100자 이내로 명확하게 작성하세요
+- 데이터 기반으로 객관적인 분석을 제공하세요
+
+응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
+"""
+        
+        # LLM 분석 수행
+        response_text = content_generator.analyze_data(prompt)
+        
+        # JSON 파싱 시도
+        try:
+            if isinstance(response_text, dict):
+                analysis = response_text
+            elif isinstance(response_text, str):
+                # JSON 추출 시도
+                import re
+                json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
+                if json_match:
+                    analysis = json.loads(json_match.group())
+                else:
+                    analysis = json.loads(response_text)
+            else:
+                raise ValueError("예상치 못한 응답 형식")
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"[API] JSON 파싱 오류: {e}")
+            print(f"[API] 응답 텍스트: {response_text[:500]}")
+            # 기본 분석 생성
+            analysis = {
+                "summary": f"출판단지 활성화 지수가 {vitality_score:.1f}점으로, {'활성화가 진행 중' if vitality_score >= 70 else '개선이 필요'}합니다.",
+                "detailed_analysis": [
+                    f"파주시 출판단지의 현재 활성화 지수는 {vitality_score:.1f}점으로 평가됩니다. 이는 {'목표 수준에 근접한' if vitality_score >= 70 else '목표 수준보다 낮은'} 상태로, {'지속적인 활성화 노력이 필요한' if vitality_score >= 70 else '즉각적인 개선 전략이 요구되는'} 상황입니다.",
+                    f"문화 공간 활성화 점수 {activation_overall:.1f}점과 주말/평일 방문 비율 {weekend_ratio:.2f}배의 데이터를 종합하면, 출판단지의 활성화는 {'주말 중심' if weekend_ratio > 1.2 else '평일 중심' if weekend_ratio < 0.8 else '균형잡힌'} 패턴을 보이고 있습니다.",
+                    "지역별 활성화 지수를 분석한 결과, 각 지역마다 고유한 특성을 가지고 있어 지역별 맞춤형 전략이 필요합니다. 특히 소비활력과 생산활력의 차이가 지역별 활성화 수준에 영향을 미치고 있습니다.",
+                    "주말 방문 패턴이 평일보다 높은 점은 주말 프로그램 집중 운영의 효과를 보여주며, 평일 방문 활성화를 위한 추가 전략이 필요합니다. 타겟 고객층별 맞춤 프로그램 개발을 통해 방문 패턴을 개선할 수 있습니다.",
+                    f"전반적으로 출판단지 활성화는 {'긍정적인 추세' if vitality_score >= 70 else '개선의 여지가 많은'} 상태입니다. 데이터 기반의 체계적인 접근과 지역 특성을 반영한 맞춤형 프로그램 운영을 통해 활성화 수준을 더욱 향상시킬 수 있을 것입니다."
+                ],
+                "strengths": [
+                    "지역별 활성화 지수 데이터가 체계적으로 관리되고 있습니다",
+                    "주말 방문 패턴이 명확하게 분석되어 있습니다"
+                ],
+                "weaknesses": [
+                    "활성화 점수가 목표치에 미치지 못하고 있습니다",
+                    "평일 방문 활성화가 부족합니다"
+                ],
+                "opportunities": [
+                    "주말 프로그램을 확대하여 활성화를 높일 수 있습니다",
+                    "타겟 고객층 맞춤 프로그램 개발이 필요합니다"
+                ],
+                "recommendations": [
+                    "주말 특화 프로그램 확대 운영",
+                    "평일 직장인 대상 프로그램 개발",
+                    "지역별 맞춤형 활성화 전략 수립",
+                    "소비활력 향상을 위한 프로그램 기획",
+                    "출판 관련 프로그램 확대"
+                ],
+                "action_plan": [
+                    "1단계: 주말 프로그램 확대 계획 수립",
+                    "2단계: 타겟 고객층 분석 및 맞춤 프로그램 개발",
+                    "3단계: 지역별 활성화 전략 수립",
+                    "4단계: 프로그램 실행 및 모니터링",
+                    "5단계: 효과 평가 및 개선"
+                ]
+            }
+        
+        return analysis
+        
+    except Exception as e:
+        print(f"[API] 종합 분석 생성 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        # 기본 분석 반환
+        return {
+            "summary": "출판단지 활성화를 위한 종합 분석을 생성하는 중 오류가 발생했습니다.",
+            "detailed_analysis": [
+                "데이터 분석을 완료한 후 다시 시도해주세요."
+            ],
+            "strengths": [],
+            "weaknesses": [],
+            "opportunities": [],
+            "recommendations": ["데이터 분석을 완료한 후 다시 시도해주세요."],
+            "action_plan": []
+        }
+
 
 @app.post("/api/analytics/action-items")
 async def get_action_items(request: Dict):
@@ -1233,69 +1420,76 @@ async def chat_stream(request: Dict):
                 yield f"data: {json.dumps({'error': '질문을 입력해주세요.'})}\n\n"
                 return
             
-            # 컨텍스트 정보 추출
+            # 컨텍스트 정보 추출 (model_metrics는 큐레이션에 불필요)
             predictions = context.get('predictions', {})
             statistics = context.get('statistics', {})
-            model_metrics = context.get('model_metrics', {})
             
-            # 예측 데이터 요약
+            # 예측 데이터 요약 (큐레이션 지표 기반)
             prediction_summary = ""
             if predictions and isinstance(predictions, dict) and 'predictions' in predictions:
                 pred_list = predictions.get('predictions', [])
                 if pred_list:
-                    prediction_summary = "\n**문화 공간별 예측 현황**:\n"
+                    prediction_summary = "\n**문화 공간별 큐레이션 지표**:\n"
                     for p in pred_list[:5]:
                         space = p.get('space', p.get('spot', 'N/A'))
-                        visits = p.get('predicted_visit', 0)
-                        crowd = p.get('crowd_level', 0) * 100
-                        prediction_summary += f"- {space}: 예측 {visits:,}명, 혼잡도 {crowd:.1f}%\n"
+                        curation_metrics = p.get('curation_metrics', {})
+                        
+                        # 최고 점수 프로그램 찾기
+                        top_program = None
+                        top_score = 0
+                        for prog_type, metrics in curation_metrics.items():
+                            if isinstance(metrics, dict) and metrics.get('overall_score', 0) > top_score:
+                                top_score = metrics['overall_score']
+                                top_program = prog_type
+                        
+                        if top_program:
+                            prediction_summary += f"- {space}: 추천 프로그램 '{top_program}' (점수: {top_score:.1f})\n"
+                        else:
+                            visits = p.get('predicted_visit', 0)
+                            prediction_summary += f"- {space}: 예측 {visits:,}명\n"
             
-            # 통계 요약
+            # 통계 요약 (큐레이션 지표 기반)
             stats_summary = ""
             if statistics:
                 total = statistics.get('total_visits', 0)
-                avg_crowd = statistics.get('avg_crowd_level', 0) * 100
                 stats_summary = f"""
 **전체 통계**:
 - 총 예측 방문 수: {total:,}명
-- 평균 혼잡도: {avg_crowd:.1f}%
 """
             
-            # 모델 성능 요약
-            model_summary = ""
-            if model_metrics:
-                r2 = model_metrics.get('cv_r2_mean') or model_metrics.get('r2', 0)
-                mae = model_metrics.get('cv_mae_mean') or model_metrics.get('mae', 0)
-                model_summary = f"""
-**모델 성능**:
-- 정확도 (R²): {r2 * 100:.1f}%
-- 평균 오차 (MAE): {mae:.0f}명
-"""
+            # 모델 성능은 큐레이션에 불필요하므로 제거
+            # model_summary = ""
             
-            # 강화된 프롬프트 생성
-            prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 데이터 분석 어시스턴트입니다.
-사용자의 질문에 대해 ML 데이터 분석 결과를 바탕으로 친절하고 정확하게 답변해주세요.
-답변은 마크다운 형식으로 작성해주세요 (제목, 목록, 표 등 활용).
+            # 큐레이션 중심 프롬프트 생성
+            prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 큐레이션 어시스턴트입니다.
+사용자의 질문에 대해 ML 예측 데이터를 바탕으로 **실질적인 큐레이션 제안**을 해주세요.
 
-**현재 데이터 상황**:
+**중요**: ML 지표를 설명하거나 분석하지 마세요. 대신 ML 예측 데이터를 활용해서 **구체적인 프로그램 제안**을 해주세요.
+
+**현재 예측 데이터**:
 {stats_summary}
-{model_summary}
 {prediction_summary}
 
 **사용자 질문**: {query}
 
 **답변 요구사항**:
-1. 질문에 정확하고 구체적으로 답변하세요
-2. 데이터 기반 사실을 제공하되, 이해하기 쉽게 설명하세요
-3. 출판단지 활성화와 문화 공간 운영 관점에서 인사이트를 제공하세요
-4. 필요시 실행 가능한 추천사항도 포함하세요
-5. 자연스럽고 대화하듯이 답변하세요
-6. 수치 데이터는 정확히 인용하세요
-7. 마크다운 형식(제목, 목록, 강조 등)을 적절히 활용하세요
+1. **큐레이션 중심**: ML 지표 설명이 아닌, 실질적인 프로그램 제안을 해주세요
+2. **구체적 제안**: 어떤 프로그램을 언제 어디서 운영하면 좋을지 구체적으로 제안하세요
+3. **데이터 기반**: 예측 데이터를 활용하되, 사용자는 ML 지표를 몰라도 됩니다
+4. **실행 가능**: 즉시 실행 가능한 프로그램 아이디어와 운영 방안을 제시하세요
+5. **자연스러운 대화**: 친근하고 자연스럽게 대화하듯이 답변하세요
+6. **마크다운 활용**: 제목, 목록, 강조 등을 적절히 활용하세요
+
+**답변 예시**:
+❌ 나쁜 예: "R² 점수는 0.95로 높은 정확도를 보입니다. 이는 모델이..."
+✅ 좋은 예: "주말 오후에 헤이리예술마을에서 예상 방문 수가 높으므로, '작가와의 만남' 프로그램을 추천합니다..."
 
 **답변 형식**:
-자연스러운 대화 형식으로 답변하되, 명확하고 구체적으로 작성해주세요.
-마크다운 형식으로 구조화하여 가독성을 높여주세요.
+- 프로그램 제안: 구체적인 프로그램 이름과 내용
+- 운영 시점: 언제 운영하면 좋을지
+- 운영 장소: 어디서 운영하면 좋을지
+- 타겟 고객: 누구를 대상으로 하면 좋을지
+- 기대 효과: 어떤 효과를 기대할 수 있는지
 """
             
             # LLM 호출 (스트리밍)
@@ -1347,66 +1541,73 @@ async def chat_query(request: Dict):
         if not query:
             raise HTTPException(status_code=400, detail="질문을 입력해주세요.")
         
-        # 컨텍스트 정보 추출
+        # 컨텍스트 정보 추출 (model_metrics는 큐레이션에 불필요)
         predictions = context.get('predictions', {})
         statistics = context.get('statistics', {})
-        model_metrics = context.get('model_metrics', {})
         
         # 예측 데이터 요약
         prediction_summary = ""
         if predictions and isinstance(predictions, dict) and 'predictions' in predictions:
             pred_list = predictions.get('predictions', [])
             if pred_list:
-                prediction_summary = "\n**문화 공간별 예측 현황**:\n"
+                prediction_summary = "\n**문화 공간별 큐레이션 지표**:\n"
                 for p in pred_list[:5]:
                     space = p.get('space', p.get('spot', 'N/A'))
-                    visits = p.get('predicted_visit', 0)
-                    crowd = p.get('crowd_level', 0) * 100
-                    prediction_summary += f"- {space}: 예측 {visits:,}명, 혼잡도 {crowd:.1f}%\n"
+                    curation_metrics = p.get('curation_metrics', {})
+                    
+                    # 최고 점수 프로그램 찾기
+                    top_program = None
+                    top_score = 0
+                    for prog_type, metrics in curation_metrics.items():
+                        if isinstance(metrics, dict) and metrics.get('overall_score', 0) > top_score:
+                            top_score = metrics['overall_score']
+                            top_program = prog_type
+                    
+                    if top_program:
+                        prediction_summary += f"- {space}: 추천 프로그램 '{top_program}' (점수: {top_score:.1f})\n"
+                    else:
+                        visits = p.get('predicted_visit', 0)
+                        prediction_summary += f"- {space}: 예측 {visits:,}명\n"
         
-        # 통계 요약
+        # 통계 요약 (큐레이션 지표 기반)
         stats_summary = ""
         if statistics:
             total = statistics.get('total_visits', 0)
-            avg_crowd = statistics.get('avg_crowd_level', 0) * 100
             stats_summary = f"""
 **전체 통계**:
 - 총 예측 방문 수: {total:,}명
-- 평균 혼잡도: {avg_crowd:.1f}%
 """
         
-        # 모델 성능 요약
-        model_summary = ""
-        if model_metrics:
-            r2 = model_metrics.get('cv_r2_mean') or model_metrics.get('r2', 0)
-            mae = model_metrics.get('cv_mae_mean') or model_metrics.get('mae', 0)
-            model_summary = f"""
-**모델 성능**:
-- 정확도 (R²): {r2 * 100:.1f}%
-- 평균 오차 (MAE): {mae:.0f}명
-"""
-        
-        # 강화된 프롬프트 생성
-        prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 데이터 분석 어시스턴트입니다.
-사용자의 질문에 대해 ML 데이터 분석 결과를 바탕으로 친절하고 정확하게 답변해주세요.
+        # 큐레이션 중심 프롬프트 생성
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 큐레이션 어시스턴트입니다.
+사용자의 질문에 대해 ML 예측 데이터를 바탕으로 **실질적인 큐레이션 제안**을 해주세요.
 
-**현재 데이터 상황**:
+**중요**: ML 지표를 설명하거나 분석하지 마세요. 대신 ML 예측 데이터를 활용해서 **구체적인 프로그램 제안**을 해주세요.
+
+**현재 예측 데이터**:
 {stats_summary}
-{model_summary}
 {prediction_summary}
 
 **사용자 질문**: {query}
 
 **답변 요구사항**:
-1. 질문에 정확하고 구체적으로 답변하세요
-2. 데이터 기반 사실을 제공하되, 이해하기 쉽게 설명하세요
-3. 출판단지 활성화와 문화 공간 운영 관점에서 인사이트를 제공하세요
-4. 필요시 실행 가능한 추천사항도 포함하세요
-5. 자연스럽고 대화하듯이 답변하세요
-6. 수치 데이터는 정확히 인용하세요
+1. **큐레이션 중심**: ML 지표 설명이 아닌, 실질적인 프로그램 제안을 해주세요
+2. **구체적 제안**: 어떤 프로그램을 언제 어디서 운영하면 좋을지 구체적으로 제안하세요
+3. **데이터 기반**: 예측 데이터를 활용하되, 사용자는 ML 지표를 몰라도 됩니다
+4. **실행 가능**: 즉시 실행 가능한 프로그램 아이디어와 운영 방안을 제시하세요
+5. **자연스러운 대화**: 친근하고 자연스럽게 대화하듯이 답변하세요
+6. **마크다운 활용**: 제목, 목록, 강조 등을 적절히 활용하세요
+
+**답변 예시**:
+❌ 나쁜 예: "R² 점수는 0.95로 높은 정확도를 보입니다. 이는 모델이..."
+✅ 좋은 예: "주말 오후에 헤이리예술마을에서 예상 방문 수가 높으므로, '작가와의 만남' 프로그램을 추천합니다..."
 
 **답변 형식**:
-자연스러운 대화 형식으로 답변하되, 명확하고 구체적으로 작성해주세요.
+- 프로그램 제안: 구체적인 프로그램 이름과 내용
+- 운영 시점: 언제 운영하면 좋을지
+- 운영 장소: 어디서 운영하면 좋을지
+- 타겟 고객: 누구를 대상으로 하면 좋을지
+- 기대 효과: 어떤 효과를 기대할 수 있는지
 """
         
         # LLM 호출 (채팅용 자연어 응답)

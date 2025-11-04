@@ -92,6 +92,50 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
     }
   }, [vitality?.overall_publishing_complex_vitality])
 
+  // 종합 출판단지 활성화 분석 LLM 생성
+  const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null)
+  const [comprehensiveAnalysisLoading, setComprehensiveAnalysisLoading] = useState(false)
+
+  useEffect(() => {
+    // 모든 주요 데이터가 로드되면 종합 분석 생성
+    if (metrics && activationScores && vitality && !comprehensiveAnalysis && !comprehensiveAnalysisLoading) {
+      generateComprehensiveAnalysis()
+    }
+  }, [metrics, activationScores, vitality])
+
+  const generateComprehensiveAnalysis = async () => {
+    setComprehensiveAnalysisLoading(true)
+    
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/analytics/comprehensive-publishing-analysis`, {
+        space_name: spaceName,
+        activation_scores: activationScores,
+        metrics: {
+          demographic_targeting: metrics.demographic_targeting,
+          weekend_analysis: metrics.weekend_analysis,
+          seasonal_patterns: metrics.seasonal_patterns,
+          optimal_time_analysis: metrics.optimal_time_analysis
+        },
+        vitality: vitality
+      })
+
+      setComprehensiveAnalysis(response.data)
+    } catch (error) {
+      console.error('종합 분석 생성 오류:', error)
+      // 기본 분석 생성
+      setComprehensiveAnalysis({
+        summary: '출판단지 활성화를 위한 종합 분석을 준비 중입니다.',
+        strengths: [],
+        weaknesses: [],
+        opportunities: [],
+        recommendations: [],
+        action_plan: []
+      })
+    } finally {
+      setComprehensiveAnalysisLoading(false)
+    }
+  }
+
   const loadMetrics = async () => {
     setLoading(true)
     try {
@@ -338,6 +382,164 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
         </div>
         <p className="metrics-subtitle">AI 문화 및 콘텐츠 서비스를 통한 지역 활성화 데이터 분석</p>
       </div>
+
+      {/* 종합 출판단지 활성화 분석 (LLM 강화) */}
+      {(comprehensiveAnalysis || comprehensiveAnalysisLoading) && (
+        <div className="comprehensive-analysis-card">
+          <h3 className="card-title">
+            <MdLightbulb className="card-title-icon" />
+            AI 종합 활성화 분석
+          </h3>
+          {comprehensiveAnalysisLoading ? (
+            <div className="analysis-loading">
+              <MdLightbulb className="loading-icon" />
+              <p>AI가 출판단지 활성화 데이터를 종합 분석 중입니다...</p>
+            </div>
+          ) : comprehensiveAnalysis ? (
+            <div className="comprehensive-analysis-content">
+              {/* 종합 결과 요약 */}
+              <div className="comprehensive-result-summary">
+                <div className="result-header">
+                  <h4 className="result-title">
+                    <MdLightbulb className="result-icon" />
+                    종합 분석 결과
+                  </h4>
+                  <div className="result-score">
+                    <span className="score-label">활성화 지수</span>
+                    <span className="score-value">
+                      {vitality?.overall_publishing_complex_vitality 
+                        ? (vitality.overall_publishing_complex_vitality * 100).toFixed(1)
+                        : '0.0'}
+                    </span>
+                    <span className="score-unit">/ 100</span>
+                  </div>
+                </div>
+                {comprehensiveAnalysis.summary && (
+                  <p className="result-summary-text">{comprehensiveAnalysis.summary}</p>
+                )}
+              </div>
+
+              {/* 서술형 분석 */}
+              {comprehensiveAnalysis.detailed_analysis && (
+                <div className="analysis-section detailed-analysis-section">
+                  <h4 className="section-title">
+                    <MdDescription className="section-icon" />
+                    서술형 분석
+                  </h4>
+                  <div className="detailed-analysis-content">
+                    {comprehensiveAnalysis.detailed_analysis.map((paragraph, index) => (
+                      <p key={index} className="analysis-paragraph">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 요약 (기존) */}
+              {comprehensiveAnalysis.summary && !comprehensiveAnalysis.detailed_analysis && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdDescription className="section-icon" />
+                    분석 요약
+                  </h4>
+                  <p className="analysis-summary">{comprehensiveAnalysis.summary}</p>
+                </div>
+              )}
+
+              {/* 강점 */}
+              {comprehensiveAnalysis.strengths && comprehensiveAnalysis.strengths.length > 0 && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdStar className="section-icon" />
+                    주요 강점
+                  </h4>
+                  <ul className="analysis-list">
+                    {comprehensiveAnalysis.strengths.map((item, index) => (
+                      <li key={index}>
+                        <MdCheckCircle className="list-icon success" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 개선점 */}
+              {comprehensiveAnalysis.weaknesses && comprehensiveAnalysis.weaknesses.length > 0 && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdTrendingUp className="section-icon" />
+                    개선 필요 영역
+                  </h4>
+                  <ul className="analysis-list">
+                    {comprehensiveAnalysis.weaknesses.map((item, index) => (
+                      <li key={index}>
+                        <MdLightbulb className="list-icon warning" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 기회 */}
+              {comprehensiveAnalysis.opportunities && comprehensiveAnalysis.opportunities.length > 0 && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdEvent className="section-icon" />
+                    활성화 기회
+                  </h4>
+                  <ul className="analysis-list">
+                    {comprehensiveAnalysis.opportunities.map((item, index) => (
+                      <li key={index}>
+                        <MdCheckCircle className="list-icon opportunity" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 추천사항 */}
+              {comprehensiveAnalysis.recommendations && comprehensiveAnalysis.recommendations.length > 0 && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdCheckCircle className="section-icon" />
+                    실행 가능한 추천사항
+                  </h4>
+                  <ul className="analysis-list recommendations">
+                    {comprehensiveAnalysis.recommendations.map((item, index) => (
+                      <li key={index}>
+                        <MdCheckCircle className="list-icon recommendation" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* 실행 계획 */}
+              {comprehensiveAnalysis.action_plan && comprehensiveAnalysis.action_plan.length > 0 && (
+                <div className="analysis-section">
+                  <h4 className="section-title">
+                    <MdPeople className="section-icon" />
+                    단계별 실행 계획
+                  </h4>
+                  <ol className="action-plan-list">
+                    {comprehensiveAnalysis.action_plan.map((item, index) => (
+                      <li key={index}>
+                        <span className="step-number">{index + 1}</span>
+                        <span className="step-content">{item}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      )}
 
       <div className="metrics-grid">
         {/* 활성화 점수 */}
@@ -629,48 +831,8 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
           </div>
         )}
 
-        {/* 생활인구 상관관계 */}
-        {metrics?.life_population_correlation && (
-          <div className="metric-card correlation-analysis">
-            <h3 className="card-title">
-              <MdLink className="card-title-icon" />
-              생활인구와 방문 패턴 상관관계
-            </h3>
-            <div className="correlation-summary">
-              <div className="correlation-value">
-                <span className="correlation-label">전체 상관관계</span>
-                <span className="correlation-number">
-                  {(metrics.life_population_correlation.overall_correlation * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-            {metrics.life_population_correlation.regional_correlations && (
-              <div className="regional-correlations">
-                <h4>지역별 상관관계:</h4>
-                <div className="correlation-list">
-                  {Object.entries(metrics.life_population_correlation.regional_correlations).map(([region, corr]) => (
-                    <div key={region} className="correlation-item">
-                      <span className="region-name">{region}</span>
-                      <span className="correlation-bar">
-                        <span 
-                          className="correlation-fill" 
-                          style={{ width: `${corr * 100}%` }}
-                        ></span>
-                      </span>
-                      <span className="correlation-number">{(corr * 100).toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="correlation-insight">
-              <p>
-                <MdLightbulb className="insight-icon" />
-                <strong>인사이트:</strong> {metrics.life_population_correlation.insight}
-              </p>
-            </div>
-          </div>
-        )}
+        {/* 생활인구 상관관계 - 큐레이션에 직접 필요하지 않으므로 제거 */}
+        {/* 통계적 상관관계는 큐레이터가 직접 활용하기 어려운 기술적 지표 */}
 
         {/* 프로그램 준비도 */}
         {metrics?.program_readiness && (

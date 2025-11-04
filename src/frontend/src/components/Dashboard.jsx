@@ -7,8 +7,9 @@ import InsightCards from './InsightCards'
 import ActivityFeed from './ActivityFeed'
 import PredictionChart from './PredictionChart'
 import HeatmapView from './HeatmapView'
-import ModelMetrics from './ModelMetrics'
-import MetricsVisualization from './MetricsVisualization'
+// ModelMetrics와 MetricsVisualization은 큐레이션에 불필요한 기술적 지표이므로 제거
+// import ModelMetrics from './ModelMetrics'
+// import MetricsVisualization from './MetricsVisualization'
 import MeaningfulMetrics from './MeaningfulMetrics'
 import MetricsGroup from './MetricsGroup'
 import LLMAnalysisModal from './LLMAnalysisModal'
@@ -27,7 +28,8 @@ function Dashboard() {
   const [predictions, setPredictions] = useState(null)
   const [statistics, setStatistics] = useState(null)
   const [trendData, setTrendData] = useState(null)
-  const [modelMetrics, setModelMetrics] = useState(null)
+  // 모델 지표는 큐레이션에 불필요하므로 제거
+  // const [modelMetrics, setModelMetrics] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showLLMModal, setShowLLMModal] = useState(false)
   const [llmAnalysis, setLlmAnalysis] = useState(null)
@@ -57,9 +59,9 @@ function Dashboard() {
       })
       setStatistics(statsResponse.data)
 
-      // ML 모델 지표 로드
-      const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/model-metrics`)
-      setModelMetrics(metricsResponse.data)
+      // ML 모델 지표 로드 - 큐레이션에 불필요하므로 제거
+      // const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/model-metrics`)
+      // setModelMetrics(metricsResponse.data)
 
       // 트렌드 데이터 로드
       const trendResponse = await axios.get(`${API_BASE_URL}/api/analytics/trends`, {
@@ -88,25 +90,8 @@ function Dashboard() {
         model_accuracy: 0.92,
         active_spaces: 5,
       })
-      setModelMetrics({
-        final_mae: 719.5,
-        final_rmse: 1582.0,
-        final_r2: 0.9986,
-        final_mape: 0.0286,
-        cv_mae_mean: 1523.7,
-        cv_rmse_mean: 3175.8,
-        cv_r2_mean: 0.9945,
-        mae: 719.5,
-        rmse: 1582.0,
-        r2: 0.9986,
-        mape: 0.0286,
-        predictions_count: 1250,
-        last_training_date: '2025-11-03',
-        model_type: 'Random Forest',
-        validation_method: 'K-Fold Cross Validation (5 folds)',
-        n_features: 45,
-        n_samples: 115,
-      })
+      // 모델 지표는 큐레이션에 불필요하므로 제거
+      // setModelMetrics({...})
       setTrendData({
         daily_trend: [
           { date: '2025-01-15', visits: 98000 },
@@ -132,7 +117,6 @@ function Dashboard() {
       const response = await axios.post(`${API_BASE_URL}/api/analytics/llm-analysis`, {
         predictions: predictions?.predictions || [],
         statistics: statistics,
-        model_metrics: modelMetrics,
         date: selectedDate,
       })
       setLlmAnalysis(response.data)
@@ -210,7 +194,6 @@ function Dashboard() {
       {/* 히어로 섹션 */}
       <HeroSection 
         statistics={statistics} 
-        modelMetrics={modelMetrics}
         onPeriodPredict={handlePeriodPredict}
       />
 
@@ -236,7 +219,6 @@ function Dashboard() {
         <ActionItems 
           predictions={predictions}
           statistics={statistics}
-          modelMetrics={modelMetrics}
           date={selectedDate}
         />
       </div>
@@ -319,7 +301,6 @@ function Dashboard() {
             <InsightCards 
               predictions={predictions} 
               statistics={statistics} 
-              modelMetrics={modelMetrics}
               onMetricClick={(metricName, metricValue, metricType) => {
                 setShowChatModal(true)
                 setTimeout(() => {
@@ -381,38 +362,8 @@ function Dashboard() {
         </MetricsGroup>
       )}
 
-      {/* 예측 시스템 신뢰도 그룹 - 맨 뒤로 이동 */}
-      {modelMetrics && (
-        <MetricsGroup 
-          title="예측 시스템 신뢰도" 
-          icon={<MdGpsFixed />}
-          priority="low"
-          defaultOpen={false}
-        >
-          <ModelMetrics 
-            metrics={modelMetrics}
-            onMetricClick={(metricName, metricValue, metricType) => {
-              setShowChatModal(true)
-              setTimeout(() => {
-                if (chatModalRef.current) {
-                  chatModalRef.current.askAboutMetric(metricName, metricValue, metricType)
-                }
-              }, 300)
-            }}
-          />
-          <MetricsVisualization 
-            metrics={modelMetrics}
-            onMetricClick={(metricName, metricValue, metricType) => {
-              setShowChatModal(true)
-              setTimeout(() => {
-                if (chatModalRef.current) {
-                  chatModalRef.current.askAboutMetric(metricName, metricValue, metricType)
-                }
-              }, 300)
-            }}
-          />
-        </MetricsGroup>
-      )}
+      {/* 예측 시스템 신뢰도 그룹 - 큐레이션에 불필요한 기술적 지표이므로 제거 */}
+      {/* MAE, RMSE, R² 등은 큐레이터가 직접 사용할 정보가 아님 */}
 
       {/* 좌측 하단 채팅 버튼 - 항상 고정 */}
       <ChatButton 
@@ -443,7 +394,6 @@ function Dashboard() {
           onClose={() => setShowChatModal(false)}
           predictions={predictions}
           statistics={statistics}
-          modelMetrics={modelMetrics}
         />
       )}
     </div>

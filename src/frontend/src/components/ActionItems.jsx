@@ -5,14 +5,14 @@ import './ActionItems.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-function ActionItems({ predictions, statistics, modelMetrics, date, onReportAdd }) {
+function ActionItems({ predictions, statistics, date, onReportAdd }) {
   const [actionItems, setActionItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const timeoutRef = useRef(null)
 
   useEffect(() => {
-    if (predictions && statistics && modelMetrics) {
+    if (predictions && statistics) {
       loadActionItems()
     }
     
@@ -21,7 +21,7 @@ function ActionItems({ predictions, statistics, modelMetrics, date, onReportAdd 
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [predictions, statistics, modelMetrics, date])
+  }, [predictions, statistics, date])
 
   const loadActionItems = async () => {
     setLoading(true)
@@ -60,7 +60,6 @@ function ActionItems({ predictions, statistics, modelMetrics, date, onReportAdd 
       const response = await axios.post(`${API_BASE_URL}/api/analytics/action-items`, {
         predictions: predictions?.predictions || predictions || [],
         statistics: statistics || {},
-        model_metrics: modelMetrics || {},
         date: date || new Date().toISOString().split('T')[0]
       }, {
         timeout: 20000  // LLM 응답을 위해 20초로 증가

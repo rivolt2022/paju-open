@@ -1,0 +1,118 @@
+{
+  "training_date": "2025-11-04T15:08:49.174842",
+  "model_type": "Random Forest (Curation Focused)",
+  "validation_method": "K-Fold Cross Validation (5 folds)",
+  "models": {
+    "북토크_score": {
+      "target": "북토크_recommendation_score",
+      "n_samples": 115
+    },
+    "북토크_suitability": {
+      "target": "북토크_time_suitability",
+      "n_samples": 115
+    },
+    "북토크_match": {
+      "target": "북토크_demographic_match",
+      "n_samples": 115
+    },
+    "작가 사인회_score": {
+      "target": "작가 사인회_recommendation_score",
+      "n_samples": 115
+    },
+    "작가 사인회_suitability": {
+      "target": "작가 사인회_time_suitability",
+      "n_samples": 115
+    },
+    "작가 사인회_match": {
+      "target": "작가 사인회_demographic_match",
+      "n_samples": 115
+    },
+    "전시회_score": {
+      "target": "전시회_recommendation_score",
+      "n_samples": 115
+    },
+    "전시회_suitability": {
+      "target": "전시회_time_suitability",
+      "n_samples": 115
+    },
+    "전시회_match": {
+      "target": "전시회_demographic_match",
+      "n_samples": 115
+    },
+    "문화 프로그램_score": {
+      "target": "문화 프로그램_recommendation_score",
+      "n_samples": 115
+    },
+    "문화 프로그램_suitability": {
+      "target": "문화 프로그램_time_suitability",
+      "n_samples": 115
+    },
+    "문화 프로그램_match": {
+      "target": "문화 프로그램_demographic_match",
+      "n_samples": 115
+    }
+  },
+  "feature_names": [
+    "연도",
+    "월",
+    "북토크_recommendation_score",
+    "작가 사인회_recommendation_score",
+    "전시회_recommendation_score",
+    "문화 프로그램_recommendation_score",
+    "북토크_time_suitability",
+    "작가 사인회_time_suitability",
+    "전시회_time_suitability",
+    "문화 프로그램_time_suitability",
+    "북토크_demographic_match",
+    "작가 사인회_demographic_match",
+    "전시회_demographic_match",
+    "문화 프로그램_demographic_match",
+    "year",
+    "month",
+    "day",
+    "day_of_week",
+    "day_of_year",
+    "week_of_year",
+    "quarter",
+    "is_weekend",
+    "season",
+    "is_holiday",
+    "is_month_start",
+    "is_month_end",
+    "avg_life_population",
+    "life_population_normalized",
+    "거주인구",
+    "근무인구",
+    "resident_ratio",
+    "worker_ratio",
+    "visitor_ratio",
+    "morning_population",
+    "afternoon_population",
+    "evening_population",
+    "estimated_consumption",
+    "regional_vitality",
+    "population_vitality",
+    "consumption_vitality",
+    "방문인구(명)_lag_1",
+    "방문인구(명)_lag_7",
+    "방문인구(명)_lag_30",
+    "방문인구(명)_rolling_mean_7",
+    "방문인구(명)_rolling_std_7",
+    "방문인구(명)_rolling_max_7",
+    "방문인구(명)_rolling_min_7",
+    "방문인구(명)_rolling_mean_30",
+    "방문인구(명)_rolling_std_30",
+    "방문인구(명)_rolling_max_30",
+    "방문인구(명)_rolling_min_30",
+    "방문인구(명)_rolling_mean_90",
+    "방문인구(명)_rolling_std_90",
+    "방문인구(명)_rolling_max_90",
+    "방문인구(명)_rolling_min_90"
+  ],
+  "program_types": [
+    "북토크",
+    "작가 사인회",
+    "전시회",
+    "문화 프로그램"
+  ]
+}
