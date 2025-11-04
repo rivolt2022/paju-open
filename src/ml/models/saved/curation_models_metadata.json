@@ -1,5 +1,5 @@
 {
-  "training_date": "2025-11-04T15:08:49.174842",
+  "training_date": "2025-11-04T18:53:06.020484",
   "model_type": "Random Forest (Curation Focused)",
   "validation_method": "K-Fold Cross Validation (5 folds)",
   "models": {

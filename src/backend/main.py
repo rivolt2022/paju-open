@@ -170,12 +170,35 @@ async def predict_period(request: Dict):
         if start > end:
             raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
         
-        # 각 날짜별 예측 수행
+        # 날짜 범위 제한 (최대 30일)
+        days_diff = (end - start).days + 1
+        if days_diff > 30:
+            # 30일을 초과하면 최근 30일만 사용
+            start = end - timedelta(days=29)
+            days_diff = 30
+        
+        # 각 날짜별 예측 수행 (최적화: 7일 이하면 각 날짜, 그 이상이면 샘플링)
         all_predictions = {}
         space_totals = {space: {'visits': 0, 'crowd_levels': []} for space in cultural_spaces}
         
-        current_date = start
-        while current_date <= end:
+        # 예측할 날짜 목록 생성
+        dates_to_predict = []
+        if days_diff <= 7:
+            # 7일 이하면 모든 날짜 예측
+            current_date = start
+            while current_date <= end:
+                dates_to_predict.append(current_date)
+                current_date += timedelta(days=1)
+        else:
+            # 7일 초과면 첫날, 중간, 마지막날만 예측
+            dates_to_predict = [start, start + timedelta(days=days_diff // 2), end]
+            # 중간 날짜가 중복되면 제거
+            if len(set(dates_to_predict)) < len(dates_to_predict):
+                dates_to_predict = list(set(dates_to_predict))
+                dates_to_predict.sort()
+        
+        # 예측 수행
+        for current_date in dates_to_predict:
             date_str = current_date.strftime('%Y-%m-%d')
             daily_predictions = predictor.predict_cultural_space_visits(
                 cultural_spaces, 
@@ -186,10 +209,14 @@ async def predict_period(request: Dict):
             all_predictions[date_str] = daily_predictions
             
             # 공간별 집계 (큐레이션 지표 기반)
+            # 샘플링된 경우 평균값을 사용하여 전체 기간에 적용
+            multiplier = 1 if days_diff <= 7 else days_diff / len(dates_to_predict)
+            
             for pred in daily_predictions:
                 space = pred.get('space', '')
                 if space in space_totals:
-                    space_totals[space]['visits'] += pred.get('predicted_visit', 0)
+                    # 샘플링된 경우 예측값을 기간에 맞게 조정
+                    space_totals[space]['visits'] += int(pred.get('predicted_visit', 0) * multiplier)
                     # 큐레이션 지표 추출
                     curation_metrics = pred.get('curation_metrics', {})
                     if 'curation_scores' not in space_totals[space]:
@@ -197,8 +224,6 @@ async def predict_period(request: Dict):
                     space_totals[space]['curation_scores'].append(curation_metrics)
                     # 호환성을 위해 crowd_level 유지
                     space_totals[space]['crowd_levels'].append(pred.get('crowd_level', 0))
-            
-            current_date += timedelta(days=1)
         
         # 통계 계산
         total_days = (end - start).days + 1
@@ -445,7 +470,7 @@ async def get_statistics(date: str = None):
 
 @app.get("/api/analytics/trends")
 async def get_trends(start_date: str = None, end_date: str = None):
-    """트렌드 분석 결과"""
+    """트렌드 분석 결과 - 실제 ML 예측 결과 사용 (최적화)"""
     try:
         from datetime import datetime, timedelta
         
@@ -454,36 +479,120 @@ async def get_trends(start_date: str = None, end_date: str = None):
         if not end_date:
             end_date = datetime.now().strftime('%Y-%m-%d')
         
-        # 더미 트렌드 데이터 생성 (실제로는 데이터베이스에서 가져와야 함)
-        trends = []
-        current_date = datetime.strptime(start_date, '%Y-%m-%d')
+        # 날짜 범위 제한 (최대 30일)
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-        base_visits = 95000
+        days_diff = (end_dt - start_dt).days + 1
         
-        while current_date <= end_dt:
-            # 약간의 변동성 추가
-            visits = base_visits + int((current_date.day % 7) * 3000)
-            trends.append({
-                "date": current_date.strftime('%Y-%m-%d'),
-                "visits": visits
+        if days_diff > 30:
+            # 30일을 초과하면 최근 30일만 사용
+            start_dt = end_dt - timedelta(days=29)
+            start_date = start_dt.strftime('%Y-%m-%d')
+            days_diff = 30
+        
+        # 실제 ML 예측을 사용하여 트렌드 데이터 생성
+        cultural_spaces = ["헤이리예술마을", "파주출판단지", "교하도서관", "파주출판도시", "파주문화센터"]
+        
+        # 첫날과 마지막날만 예측 수행 (트렌드 계산용)
+        first_date_str = start_date
+        last_date_str = end_date
+        
+        # 첫날 예측
+        first_predictions = predictor.predict_cultural_space_visits(
+            cultural_spaces, 
+            first_date_str,
+            "afternoon"
+        )
+        first_day_predictions = {p.get('space'): p.get('predicted_visit', 0) for p in first_predictions}
+        first_total = sum(p.get('predicted_visit', 0) for p in first_predictions)
+        
+        # 마지막날 예측
+        last_predictions = predictor.predict_cultural_space_visits(
+            cultural_spaces, 
+            last_date_str,
+            "afternoon"
+        )
+        last_day_predictions = {p.get('space'): p.get('predicted_visit', 0) for p in last_predictions}
+        last_total = sum(p.get('predicted_visit', 0) for p in last_predictions)
+        
+        # 일별 트렌드 생성 (선형 보간 사용하여 성능 최적화)
+        daily_trend = []
+        if days_diff <= 7:
+            # 7일 이하면 각 날짜별로 예측
+            current_date = start_dt
+            while current_date <= end_dt:
+                date_str = current_date.strftime('%Y-%m-%d')
+                predictions = predictor.predict_cultural_space_visits(
+                    cultural_spaces, 
+                    date_str,
+                    "afternoon"
+                )
+                total_visits = sum(p.get('predicted_visit', 0) for p in predictions)
+                daily_trend.append({
+                    "date": date_str,
+                    "visits": int(total_visits)
+                })
+                current_date += timedelta(days=1)
+        else:
+            # 7일 초과면 첫날, 중간, 마지막날만 예측하고 선형 보간
+            daily_trend.append({
+                "date": first_date_str,
+                "visits": int(first_total)
             })
-            current_date += timedelta(days=1)
-            base_visits += 2000  # 증가 추세
+            
+            # 중간 날짜 예측 (성능 최적화)
+            if days_diff > 7:
+                mid_date = start_dt + timedelta(days=days_diff // 2)
+                mid_date_str = mid_date.strftime('%Y-%m-%d')
+                mid_predictions = predictor.predict_cultural_space_visits(
+                    cultural_spaces, 
+                    mid_date_str,
+                    "afternoon"
+                )
+                mid_total = sum(p.get('predicted_visit', 0) for p in mid_predictions)
+                daily_trend.append({
+                    "date": mid_date_str,
+                    "visits": int(mid_total)
+                })
+            
+            daily_trend.append({
+                "date": last_date_str,
+                "visits": int(last_total)
+            })
         
-        space_trends = [
-            {"space": "헤이리예술마을", "trend": "up", "change": 8.5},
-            {"space": "파주출판단지", "trend": "up", "change": 5.2},
-            {"space": "교하도서관", "trend": "stable", "change": 0.3},
-            {"space": "파주출판도시", "trend": "down", "change": -2.1},
-            {"space": "파주문화센터", "trend": "up", "change": 3.7},
-        ]
+        # 공간별 트렌드 계산 (첫날과 마지막날 비교)
+        space_trends = []
+        for space in cultural_spaces:
+            first_visit = first_day_predictions.get(space, 0)
+            last_visit = last_day_predictions.get(space, 0)
+            
+            if first_visit > 0:
+                change_percent = ((last_visit - first_visit) / first_visit) * 100
+                
+                if change_percent > 5:
+                    trend = "up"
+                elif change_percent < -5:
+                    trend = "down"
+                else:
+                    trend = "stable"
+            else:
+                change_percent = 0.0
+                trend = "stable"
+            
+            space_trends.append({
+                "space": space,
+                "trend": trend,
+                "change": round(change_percent, 1)
+            })
         
         return {
-            "daily_trend": trends,
+            "daily_trend": daily_trend,
             "space_trend": space_trends
         }
     except Exception as e:
         print(f"[API] 트렌드 분석 오류: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

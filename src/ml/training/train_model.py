@@ -232,14 +232,14 @@ def create_curation_targets(merged_df: pd.DataFrame, loader: EnhancedDataLoader)
 
 
 def main():
-    """메인 학습 함수 - 큐레이션 중심"""
+    """메인 학습 함수 - 큐레이션 모델 및 방문인구 예측 모델 학습"""
     print("="*60)
-    print("큐레이션 중심 모델 학습 시작")
+    print("모델 학습 시작 (큐레이션 + 방문인구 예측)")
     print("="*60)
     print(f"학습 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 데이터 로드
-    print("\n[1/6] 데이터 로드 중...")
+    print("\n[1/7] 데이터 로드 중...")
     loader = EnhancedDataLoader()
     
     # 모든 데이터 통합 로드
@@ -272,7 +272,7 @@ def main():
     print(f"    지역활력지수 데이터: {len(vitality_df)}행")
     
     # 데이터 병합
-    print("\n[2/6] 데이터 병합 및 큐레이션 타겟 생성 중...")
+    print("\n[2/7] 데이터 병합 및 큐레이션 타겟 생성 중...")
     merged_df = visit_df.copy()
     
     # 관광지 매출 데이터 병합
@@ -329,7 +329,7 @@ def main():
     print(f"    최종 데이터: {len(curation_df)}행")
     
     # 특징 엔지니어링
-    print("\n[3/6] 특징 엔지니어링 중...")
+    print("\n[3/7] 특징 엔지니어링 중...")
     engineer = EnhancedFeatureEngineer(data_loader=loader)
     
     # 특징 생성 (기존 방문인구를 특징으로 사용)
@@ -355,7 +355,7 @@ def main():
     print(f"    특징 목록: {feature_cols[:10]}...")
     
     # 큐레이션 타겟 변수들 학습
-    print("\n[4/6] 큐레이션 모델 학습 중...")
+    print("\n[4/7] 큐레이션 모델 학습 중...")
     
     program_types = ['북토크', '작가 사인회', '전시회', '문화 프로그램']
     trained_models = {}
@@ -416,8 +416,35 @@ def main():
             print(f"    학습 완료 - MAE: {results.get('cv_mae_mean', results.get('final_mae', 0)):.2f}, "
                   f"R²: {results.get('cv_r2_mean', results.get('final_r2', 0)):.4f}")
     
+    # 방문인구 예측 모델 학습
+    print("\n[5/7] 방문인구 예측 모델 학습 중...")
+    visit_model = None
+    visit_results = None
+    
+    if '방문인구(명)' in features_df.columns:
+        # 유효한 데이터만 사용
+        valid_mask = features_df['방문인구(명)'].notna() & (features_df['방문인구(명)'] > 0)
+        X_visit = features_df.loc[valid_mask, feature_cols].fillna(0)
+        y_visit = features_df.loc[valid_mask, '방문인구(명)']
+        
+        if len(X_visit) > 0:
+            print(f"    학습 데이터: {len(X_visit)}행, 타겟 범위: {y_visit.min():.0f} ~ {y_visit.max():.0f}명")
+            
+            # 모델 학습
+            visit_predictor = SpatiotemporalPredictor(model_type='random_forest')
+            visit_results = visit_predictor.train(X_visit, y_visit, use_kfold=True, cv_folds=5)
+            visit_model = visit_predictor
+            
+            print(f"    학습 완료 - MAE: {visit_results.get('cv_mae_mean', visit_results.get('final_mae', 0)):.2f}, "
+                  f"RMSE: {visit_results.get('cv_rmse_mean', visit_results.get('final_rmse', 0)):.2f}, "
+                  f"R²: {visit_results.get('cv_r2_mean', visit_results.get('final_r2', 0)):.4f}")
+        else:
+            print("    경고: 방문인구 예측 학습 데이터가 없습니다.")
+    else:
+        print("    경고: 방문인구(명) 컬럼이 없습니다.")
+    
     # 모델 저장
-    print("\n[5/6] 모델 저장 중...")
+    print("\n[6/7] 모델 저장 중...")
     model_dir = project_root / "src" / "ml" / "models" / "saved"
     model_dir.mkdir(parents=True, exist_ok=True)
     
@@ -426,6 +453,12 @@ def main():
         model_path = model_dir / f"curation_{model_key}_model.pkl"
         predictor.save(model_path)
         print(f"    모델 저장 완료: {model_path}")
+    
+    # 방문인구 예측 모델 저장
+    if visit_model is not None:
+        visit_model_path = model_dir / "spatiotemporal_model.pkl"
+        visit_model.save(visit_model_path)
+        print(f"    방문인구 예측 모델 저장 완료: {visit_model_path}")
     
     # 메타데이터 저장 (모든 모델 정보)
     metadata_path = model_dir / "curation_models_metadata.json"
@@ -442,7 +475,7 @@ def main():
     print(f"    메타데이터 저장 완료: {metadata_path}")
     
     # 학습 결과 저장
-    print("\n[6/6] 학습 결과 저장 중...")
+    print("\n[7/7] 학습 결과 저장 중...")
     results_dir = project_root / "src" / "output"
     results_dir.mkdir(parents=True, exist_ok=True)
     results_path = results_dir / "curation_training_results.json"
@@ -452,6 +485,7 @@ def main():
         'model_type': 'Random Forest (Curation Focused)',
         'validation_method': 'K-Fold Cross Validation (5 folds)',
         'results': all_results,
+        'visit_model_results': visit_results if visit_results else None,
         'n_features': len(feature_cols),
         'feature_names': feature_cols,
         'program_types': program_types,
@@ -471,18 +505,22 @@ def main():
     print(f"    학습 결과 저장 완료: {results_path}")
     
     print("\n" + "="*60)
-    print("큐레이션 모델 학습 완료!")
+    print("모델 학습 완료!")
     print("="*60)
     print(f"학습 완료 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"\n학습된 모델:")
+    print("  [큐레이션 모델]")
     for model_key in trained_models.keys():
-        print(f"  - {model_key}")
+        print(f"    - {model_key}")
+    if visit_model is not None:
+        print("  [방문인구 예측 모델]")
+        print("    - spatiotemporal_model.pkl (방문인구 예측)")
     print(f"\n모델들은 {model_dir}에 저장되었습니다.")
-    print("이 모델들을 사용하여 큐레이션 지표를 예측할 수 있습니다.")
+    print("이 모델들을 사용하여 큐레이션 지표와 방문인구를 예측할 수 있습니다.")
     print("="*60)
     
-    return trained_models, all_results
+    return trained_models, all_results, visit_model
 
 
 if __name__ == "__main__":
-    trained_models, results = main()
+    trained_models, results, visit_model = main()

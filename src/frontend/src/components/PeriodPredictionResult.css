@@ -66,10 +66,12 @@
 
 .prediction-insights,
 .prediction-recommendations {
-  background: #f9fafb;
+  background: #ffffff;
   padding: 1.5rem;
   border-radius: 12px;
+  border: 1px solid #e5e7eb;
   border-left: 4px solid #667eea;
+  box-shadow: none;
 }
 
 .insights-title,
@@ -96,7 +98,10 @@
   align-items: flex-start;
   gap: 0.75rem;
   line-height: 1.6;
-  color: #1f2937; /* 진한 회색 텍스트로 명확하게 표시 */
+  color: #1f2937;
+  background: transparent;
+  padding: 0;
+  margin: 0;
 }
 
 .insight-bullet {
@@ -108,8 +113,9 @@
 
 .insight-item span:not(.insight-bullet),
 .recommendation-item span:not(.recommendation-bullet) {
-  color: #1f2937; /* 텍스트를 진한 회색으로 명확하게 표시 */
+  color: #1f2937;
   font-size: 1rem;
+  font-weight: 400;
 }
 
 .recommendation-bullet {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MdPeople, MdGpsFixed, MdBusiness, MdAccessTime, MdLightbulb, MdCalendarToday, MdMenuBook, MdDateRange, MdPlayArrow } from 'react-icons/md'
 import './HeroSection.css'
 
-export default function HeroSection({ statistics, onDateChange, onTimeSlotChange, selectedDate, selectedTimeSlot, onPeriodPredict }) {
+export default function HeroSection({ statistics, predictions, trendData, onDateChange, onTimeSlotChange, selectedDate, selectedTimeSlot, onPeriodPredict }) {
   const [animatedValue, setAnimatedValue] = useState(0)
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -40,15 +40,29 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
     })
   }
 
-  // statistics에서 모델 정확도 가져오기 (큐레이션에 필요한 정보만)
+  // statistics에서 모델 정확도 가져오기 (ML 모델 분석 결과만 사용)
   const modelAccuracy = statistics?.model_accuracy 
     ? (statistics.model_accuracy * 100).toFixed(1) 
-    : '95.0'
+    : null
   
-  // 정확도 레벨 결정
-  const accuracyLevel = parseFloat(modelAccuracy) >= 99 ? 'excellent' : parseFloat(modelAccuracy) >= 95 ? 'high' : 'good'
+  // 정확도 레벨 결정 (값이 있을 때만)
+  const accuracyLevel = modelAccuracy 
+    ? (parseFloat(modelAccuracy) >= 99 ? 'excellent' : parseFloat(modelAccuracy) >= 95 ? 'high' : 'good')
+    : null
 
-  const totalVisits = statistics?.total_visits?.toLocaleString() || '0'
+  const totalVisits = statistics?.total_visits?.toLocaleString() || null
+  const activeSpaces = statistics?.active_spaces || null
+
+  // 전일 대비 계산 (trendData 사용)
+  const dailyTrend = trendData?.daily_trend || []
+  const yesterdayChange = dailyTrend.length >= 2 
+    ? ((dailyTrend[dailyTrend.length - 1].visits - dailyTrend[dailyTrend.length - 2].visits) / dailyTrend[dailyTrend.length - 2].visits * 100).toFixed(1)
+    : null
+
+  // 최적 방문 시간대 (predictions에서 가져오기)
+  const optimalTime = predictions?.predictions && predictions.predictions.length > 0
+    ? predictions.predictions[0].optimal_time || null
+    : null
 
   // 기간 선택 상태
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
@@ -58,6 +72,7 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
     return tomorrow.toISOString().split('T')[0]
   })
   const [predicting, setPredicting] = useState(false)
+  const [hasInitialPrediction, setHasInitialPrediction] = useState(false)
 
   const handlePeriodPredict = async () => {
     if (!startDate || !endDate || startDate > endDate) {
@@ -70,6 +85,36 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
     }
     setPredicting(false)
   }
+
+  // 페이지 로드 시 기본 예측 수행 (한 번만)
+  useEffect(() => {
+    if (hasInitialPrediction) return // 이미 실행했으면 더 이상 실행하지 않음
+    
+    if (startDate && endDate && onPeriodPredict) {
+      setHasInitialPrediction(true)
+      const performInitialPrediction = async () => {
+        if (!startDate || !endDate || startDate > endDate) {
+          return
+        }
+        setPredicting(true)
+        try {
+          if (onPeriodPredict) {
+            await onPeriodPredict(startDate, endDate)
+          }
+        } catch (error) {
+          console.error('초기 예측 실패:', error)
+        } finally {
+          setPredicting(false)
+        }
+      }
+      // 약간의 지연을 두어 무한루프 방지
+      const timer = setTimeout(() => {
+        performInitialPrediction()
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // 컴포넌트 마운트 시 한 번만 실행
 
   return (
     <div className="hero-section">
@@ -162,7 +207,7 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
                   <div className="stat-icon"><MdPeople /></div>
                 </div>
                 <div className="stat-content">
-                  <div className="stat-value">{totalVisits}</div>
+                  <div className="stat-value">{totalVisits !== null ? totalVisits : '-'}</div>
                   <div className="stat-label">오늘 예상 방문자</div>
                 </div>
               </div>
@@ -172,15 +217,19 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
                   <div className="stat-icon"><MdGpsFixed /></div>
                 </div>
                 <div className="stat-content">
-                  <div className={`stat-value stat-accuracy-${accuracyLevel}`}>{modelAccuracy}%</div>
-                  <div className="stat-label">예측 신뢰도</div>
-                  <div className="stat-hint">
-                    {accuracyLevel === 'excellent' 
-                      ? '날씨 예보 수준으로 매우 신뢰할 수 있습니다' 
-                      : accuracyLevel === 'high'
-                      ? '날씨 예보처럼 신뢰할 수 있는 수준입니다'
-                      : '신뢰할 수 있는 수준입니다'}
+                  <div className={`stat-value ${modelAccuracy ? `stat-accuracy-${accuracyLevel}` : ''}`}>
+                    {modelAccuracy !== null ? `${modelAccuracy}%` : '-'}
                   </div>
+                  <div className="stat-label">예측 신뢰도</div>
+                  {modelAccuracy && (
+                    <div className="stat-hint">
+                      {accuracyLevel === 'excellent' 
+                        ? '날씨 예보 수준으로 매우 신뢰할 수 있습니다' 
+                        : accuracyLevel === 'high'
+                        ? '날씨 예보처럼 신뢰할 수 있는 수준입니다'
+                        : '신뢰할 수 있는 수준입니다'}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -189,7 +238,7 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
                   <div className="stat-icon"><MdBusiness /></div>
                 </div>
                 <div className="stat-content">
-                  <div className="stat-value">5</div>
+                  <div className="stat-value">{activeSpaces !== null ? activeSpaces : '-'}</div>
                   <div className="stat-label">활성 문화 공간</div>
                 </div>
               </div>
@@ -214,18 +263,30 @@ export default function HeroSection({ statistics, onDateChange, onTimeSlotChange
               <span>실시간 인사이트</span>
             </div>
             <div className="insight-list">
-              <div className="insight-item">
-                <span className="insight-dot"></span>
-                <span>오늘 방문 예측: 전일 대비 <strong>+5.2%</strong></span>
-              </div>
-              <div className="insight-item">
-                <span className="insight-dot"></span>
-                <span>최적 방문 시간대: <strong>15:00-17:00</strong></span>
-              </div>
-              <div className="insight-item">
-                <span className="insight-dot"></span>
-                <span>예측 신뢰도: <strong>{modelAccuracy}%</strong> ({accuracyLevel === 'excellent' ? '매우 높음 (날씨 예보 수준)' : accuracyLevel === 'high' ? '높음' : '양호'})</span>
-              </div>
+              {yesterdayChange !== null && (
+                <div className="insight-item">
+                  <span className="insight-dot"></span>
+                  <span>오늘 방문 예측: 전일 대비 <strong>{parseFloat(yesterdayChange) > 0 ? '+' : ''}{yesterdayChange}%</strong></span>
+                </div>
+              )}
+              {optimalTime && (
+                <div className="insight-item">
+                  <span className="insight-dot"></span>
+                  <span>최적 방문 시간대: <strong>{optimalTime}</strong></span>
+                </div>
+              )}
+              {modelAccuracy !== null && (
+                <div className="insight-item">
+                  <span className="insight-dot"></span>
+                  <span>예측 신뢰도: <strong>{modelAccuracy}%</strong> ({accuracyLevel === 'excellent' ? '매우 높음 (날씨 예보 수준)' : accuracyLevel === 'high' ? '높음' : '양호'})</span>
+                </div>
+              )}
+              {!yesterdayChange && !optimalTime && modelAccuracy === null && (
+                <div className="insight-item">
+                  <span className="insight-dot"></span>
+                  <span>데이터 로딩 중...</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

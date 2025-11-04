@@ -197,7 +197,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
           ...context
         }
       }, {
-        timeout: 20000  // LLM 응답을 위해 20초로 증가
+        timeout: 60000  // LLM 응답을 위해 60초로 증가
       })
 
       if (timeoutRefs.current[metricKey]) {
@@ -267,7 +267,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을" }) {
           ...context
         }
       }, {
-        timeout: 20000  // LLM 응답을 위해 20초로 증가
+        timeout: 60000  // LLM 응답을 위해 60초로 증가
       })
 
       if (timeoutRefs.current[metricKey]) {

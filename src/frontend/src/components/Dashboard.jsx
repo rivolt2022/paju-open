@@ -63,48 +63,24 @@ function Dashboard() {
       // const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/model-metrics`)
       // setModelMetrics(metricsResponse.data)
 
-      // 트렌드 데이터 로드
+      // 트렌드 데이터 로드 (최근 7일만)
+      const today = new Date()
+      const weekAgo = new Date(today)
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      
       const trendResponse = await axios.get(`${API_BASE_URL}/api/analytics/trends`, {
         params: { 
-          start_date: dateRange.start || selectedDate,
-          end_date: dateRange.end || selectedDate,
+          start_date: weekAgo.toISOString().split('T')[0],
+          end_date: today.toISOString().split('T')[0],
         }
       })
       setTrendData(trendResponse.data)
     } catch (error) {
       console.error('[Dashboard] 데이터 로드 실패:', error)
-      // 기본값 설정
-      setPredictions({
-        date: selectedDate,
-        predictions: [
-          { space: '헤이리예술마을', predicted_visit: 42000, crowd_level: 0.68, optimal_time: '15:00-17:00', actual_visit: 38500 },
-          { space: '파주출판단지', predicted_visit: 28000, crowd_level: 0.45, optimal_time: '14:00-16:00', actual_visit: 26500 },
-          { space: '교하도서관', predicted_visit: 15000, crowd_level: 0.28, optimal_time: '10:00-12:00', actual_visit: 14200 },
-          { space: '파주출판도시', predicted_visit: 12000, crowd_level: 0.22, optimal_time: '11:00-13:00', actual_visit: 11800 },
-          { space: '파주문화센터', predicted_visit: 18000, crowd_level: 0.35, optimal_time: '14:00-17:00', actual_visit: 17200 },
-        ]
-      })
-      setStatistics({
-        total_visits: 114000,
-        avg_crowd_level: 0.40,
-        model_accuracy: 0.92,
-        active_spaces: 5,
-      })
-      // 모델 지표는 큐레이션에 불필요하므로 제거
-      // setModelMetrics({...})
-      setTrendData({
-        daily_trend: [
-          { date: '2025-01-15', visits: 98000 },
-          { date: '2025-01-16', visits: 105000 },
-          { date: '2025-01-17', visits: 112000 },
-          { date: '2025-01-18', visits: 114000 },
-        ],
-        space_trend: [
-          { space: '헤이리예술마을', trend: 'up', change: 8.5 },
-          { space: '파주출판단지', trend: 'up', change: 5.2 },
-          { space: '교하도서관', trend: 'stable', change: 0.3 },
-        ]
-      })
+      // 하드코딩된 값 제거 - 에러 발생 시 null로 설정
+      setPredictions(null)
+      setStatistics(null)
+      setTrendData(null)
     } finally {
       setLoading(false)
     }
@@ -162,7 +138,7 @@ function Dashboard() {
         end_date: endDate,
         statistics: response.data.statistics
       }, {
-        timeout: 30000
+        timeout: 60000  // LLM 응답을 위해 60초로 증가
       })
       
       setPeriodPredictionResult({
@@ -193,7 +169,9 @@ function Dashboard() {
     <div className="dashboard">
       {/* 히어로 섹션 */}
       <HeroSection 
-        statistics={statistics} 
+        statistics={statistics}
+        predictions={predictions}
+        trendData={trendData}
         onPeriodPredict={handlePeriodPredict}
       />
 

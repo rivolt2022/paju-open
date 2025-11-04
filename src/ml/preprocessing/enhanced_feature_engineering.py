@@ -242,7 +242,8 @@ class EnhancedFeatureEngineer:
         """
         모든 특징 생성 및 준비
         """
-        print("[특징 엔지니어링] 특징 생성 시작...")
+        # 로그 제거하여 성능 최적화 (필요시 디버깅 모드에서만 출력)
+        # print("[특징 엔지니어링] 특징 생성 시작...")
         
         df = df.copy()
         
@@ -280,7 +281,8 @@ class EnhancedFeatureEngineer:
         
         df = df.fillna(0)
         
-        print(f"[특징 엔지니어링] 특징 생성 완료: {len(df.columns)}개 컬럼")
+        # 로그 제거하여 성능 최적화
+        # print(f"[특징 엔지니어링] 특징 생성 완료: {len(df.columns)}개 컬럼")
         
         return df
     

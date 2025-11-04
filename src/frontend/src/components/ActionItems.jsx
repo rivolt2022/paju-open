@@ -27,7 +27,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
     setLoading(true)
     setError(null)
     
-    // 타임아웃 설정 (10초)
+    // 타임아웃 설정 (70초 - API 타임아웃보다 약간 더 길게)
     timeoutRef.current = setTimeout(() => {
       setLoading(false)
       setError('로딩 시간이 초과되었습니다.')
@@ -54,7 +54,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
           impact: '높음'
         }
       ])
-    }, 10000)
+    }, 70000)
     
     try {
       const response = await axios.post(`${API_BASE_URL}/api/analytics/action-items`, {
@@ -62,7 +62,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
         statistics: statistics || {},
         date: date || new Date().toISOString().split('T')[0]
       }, {
-        timeout: 20000  // LLM 응답을 위해 20초로 증가
+        timeout: 60000  // LLM 응답을 위해 60초로 증가
       })
       
       if (timeoutRef.current) {
