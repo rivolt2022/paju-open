@@ -23,12 +23,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r src/backend/requirements.txt && \
     pip install --no-cache-dir uvicorn[standard]
 
-# 프로젝트 파일 복사
-COPY . .
-
-# 데이터 디렉토리와 모델 디렉토리 확인
-RUN ls -la data/ && \
-    ls -la src/ml/models/saved/ || echo "모델 파일이 없습니다. 학습 후 배포하세요."
+# 프로젝트 파일 복사 (필요한 백엔드 및 ML 파일만)
+COPY src/backend/ ./src/backend/
+COPY src/ml/ ./src/ml/
+COPY src/scripts/ ./src/scripts/
+COPY sample/ ./sample/
 
 # 환경 변수 설정
 ENV PYTHONUNBUFFERED=1

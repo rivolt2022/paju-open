@@ -74,9 +74,6 @@ docs/
 # 히스토리
 history/
 
-# 샘플 파일
-sample/
-
 # 작업 파일
 task/
 
@@ -95,3 +92,31 @@ tmp/
 temp/
 *.tmp
 
+# 프론트엔드 (백엔드만 배포)
+src/frontend/
+src/frontend/**
+
+# 데이터 파일 (배포 시 필요 없다면)
+data/
+*.xlsx
+*.xls
+
+# Fly.io 설정 파일
+fly.toml
+fly.toml.bak
+
+# Vercel 설정 파일
+vercel.json
+
+# Windows 특수 파일
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Git LFS 파일 (큰 파일)
+*.psd
+*.zip
+*.tar.gz
+*.7z

@@ -52,7 +52,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://paju-culture-lab-api.fly.dev/api/$1"
+      "destination": "https://paju-ai-sparkling-frog-9781.fly.dev/api/$1"
     },
     {
       "source": "/(.*)",

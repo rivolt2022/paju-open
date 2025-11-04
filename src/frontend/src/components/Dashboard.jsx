@@ -18,7 +18,7 @@ import PeriodPredictionResult from './PeriodPredictionResult'
 import axios from 'axios'
 import './Dashboard.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
 function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])

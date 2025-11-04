@@ -3,7 +3,7 @@ import { MdFlashOn, MdRefresh, MdPerson, MdCalendarToday, MdSettings, MdPalette,
 import axios from 'axios'
 import './ActionItems.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
 function ActionItems({ predictions, statistics, modelMetrics, date, onReportAdd }) {
   const [actionItems, setActionItems] = useState([])

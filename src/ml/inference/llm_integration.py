@@ -9,9 +9,19 @@ import json
 
 # 프로젝트 루트를 경로에 추가
 project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-from sample.upstage_llm_model import UpstageModel
+# sample 모듈 import 시도
+try:
+    from sample.upstage_llm_model import UpstageModel
+except ImportError:
+    # sample 디렉토리를 직접 경로에 추가
+    sample_path = project_root / "sample"
+    if sample_path.exists():
+        if str(sample_path) not in sys.path:
+            sys.path.insert(0, str(sample_path))
+    from sample.upstage_llm_model import UpstageModel
 
 
 class ContentGenerator:
