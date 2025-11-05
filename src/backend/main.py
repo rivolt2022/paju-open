@@ -170,32 +170,24 @@ async def predict_period(request: Dict):
         if start > end:
             raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
         
-        # 날짜 범위 제한 (최대 30일)
+        # 날짜 범위 제한 (최대 3일) - 초과 시 자동으로 3일로 조정
         days_diff = (end - start).days + 1
-        if days_diff > 30:
-            # 30일을 초과하면 최근 30일만 사용
-            start = end - timedelta(days=29)
-            days_diff = 30
+        if days_diff > 3:
+            # 자동으로 3일로 제한
+            end = start + timedelta(days=2)  # 시작일 포함 3일
+            end_date = end.strftime('%Y-%m-%d')
+            days_diff = 3
         
-        # 각 날짜별 예측 수행 (최적화: 7일 이하면 각 날짜, 그 이상이면 샘플링)
+        # 각 날짜별 예측 수행 (최대 3일이므로 모든 날짜 예측)
         all_predictions = {}
         space_totals = {space: {'visits': 0, 'crowd_levels': []} for space in cultural_spaces}
         
-        # 예측할 날짜 목록 생성
+        # 예측할 날짜 목록 생성 (최대 3일이므로 모든 날짜 예측)
         dates_to_predict = []
-        if days_diff <= 7:
-            # 7일 이하면 모든 날짜 예측
-            current_date = start
-            while current_date <= end:
-                dates_to_predict.append(current_date)
-                current_date += timedelta(days=1)
-        else:
-            # 7일 초과면 첫날, 중간, 마지막날만 예측
-            dates_to_predict = [start, start + timedelta(days=days_diff // 2), end]
-            # 중간 날짜가 중복되면 제거
-            if len(set(dates_to_predict)) < len(dates_to_predict):
-                dates_to_predict = list(set(dates_to_predict))
-                dates_to_predict.sort()
+        current_date = start
+        while current_date <= end:
+            dates_to_predict.append(current_date)
+            current_date += timedelta(days=1)
         
         # 예측 수행
         for current_date in dates_to_predict:
@@ -209,13 +201,13 @@ async def predict_period(request: Dict):
             all_predictions[date_str] = daily_predictions
             
             # 공간별 집계 (큐레이션 지표 기반)
-            # 샘플링된 경우 평균값을 사용하여 전체 기간에 적용
-            multiplier = 1 if days_diff <= 7 else days_diff / len(dates_to_predict)
+            # 최대 3일이므로 모든 날짜를 예측하므로 multiplier는 항상 1
+            multiplier = 1
             
             for pred in daily_predictions:
                 space = pred.get('space', '')
                 if space in space_totals:
-                    # 샘플링된 경우 예측값을 기간에 맞게 조정
+                    # 모든 날짜를 예측하므로 multiplier는 1
                     space_totals[space]['visits'] += int(pred.get('predicted_visit', 0) * multiplier)
                     # 큐레이션 지표 추출
                     curation_metrics = pred.get('curation_metrics', {})
@@ -434,43 +426,121 @@ async def generate_course(request: GenerateRequest):
 
 
 @app.get("/api/analytics/statistics")
-async def get_statistics(date: str = None):
-    """통계 지표 조회 - 실제 학습 결과 기반"""
+async def get_statistics(date: str = None, start_date: str = None, end_date: str = None):
+    """통계 지표 조회 - 실제 학습 결과 기반 (단일 날짜 또는 기간)"""
     try:
-        if not date:
-            from datetime import datetime
-            date = datetime.now().strftime('%Y-%m-%d')
+        from datetime import datetime, timedelta
         
-        # 예측 데이터 가져오기
-        cultural_spaces = ["헤이리예술마을", "파주출판단지", "교하도서관", "파주출판도시", "파주문화센터"]
-        predictions = predictor.predict_cultural_space_visits(cultural_spaces, date, "afternoon")
+        # 기간별 통계인지 확인
+        is_period = start_date and end_date and start_date != end_date
         
-        # 통계 계산
-        total_visits = sum(p.get('predicted_visit', 0) for p in predictions)
-        avg_crowd_level = sum(p.get('crowd_level', 0) for p in predictions) / len(predictions) if predictions else 0
-        
-        # 실제 학습 결과에서 모델 정확도 가져오기
-        import json
-        results_path = project_root / "src" / "output" / "training_results.json"
-        model_accuracy = 0.92  # 기본값
-        if results_path.exists():
-            try:
-                with open(results_path, 'r', encoding='utf-8') as f:
-                    training_results = json.load(f)
-                    results = training_results.get('results', {})
-                    # 최종 R² 사용 (실제 모델 정확도)
-                    model_accuracy = results.get('final_r2', results.get('cv_r2_mean', 0.92))
-            except Exception as e:
-                print(f"[API] 학습 결과 로드 오류: {e}")
-        
-        return {
-            "total_visits": total_visits,
-            "avg_crowd_level": float(avg_crowd_level),
-            "model_accuracy": float(model_accuracy),  # 실제 학습 결과 기반
-            "active_spaces": len(predictions),
-        }
+        if is_period:
+            # 기간별 통계 계산
+            start = datetime.strptime(start_date, '%Y-%m-%d')
+            end = datetime.strptime(end_date, '%Y-%m-%d')
+            
+            if start > end:
+                raise HTTPException(status_code=400, detail="종료일은 시작일 이후여야 합니다.")
+            
+            # 날짜 범위 제한 (최대 3일) - 초과 시 자동으로 3일로 조정
+            days_diff = (end - start).days + 1
+            if days_diff > 3:
+                # 자동으로 3일로 제한
+                end = start + timedelta(days=2)  # 시작일 포함 3일
+                end_date = end.strftime('%Y-%m-%d')
+                days_diff = 3
+            
+            cultural_spaces = ["헤이리예술마을", "파주출판단지", "교하도서관", "파주출판도시", "파주문화센터"]
+            
+            # 기간 내 모든 날짜에 대한 예측 수행 (최대 3일이므로 모든 날짜 예측)
+            all_visits = []
+            all_crowd_levels = []
+            dates_to_predict = []
+            
+            # 최대 3일이므로 모든 날짜 예측
+            current_date = start
+            while current_date <= end:
+                dates_to_predict.append(current_date.strftime('%Y-%m-%d'))
+                current_date += timedelta(days=1)
+            
+            multiplier = 1
+            
+            for date_str in dates_to_predict:
+                predictions = predictor.predict_cultural_space_visits(cultural_spaces, date_str, "afternoon")
+                for p in predictions:
+                    visits = p.get('predicted_visit', 0)
+                    crowd_level = p.get('crowd_level', 0)
+                    all_visits.append(visits * multiplier)
+                    all_crowd_levels.append(crowd_level)
+            
+            # 기간별 통계 계산
+            total_visits = sum(all_visits)
+            avg_crowd_level = sum(all_crowd_levels) / len(all_crowd_levels) if all_crowd_levels else 0
+            avg_daily_visits = total_visits / days_diff if days_diff > 0 else 0
+            
+            # 실제 학습 결과에서 모델 정확도 가져오기
+            import json
+            results_path = project_root / "src" / "output" / "curation_training_results.json"
+            model_accuracy = 0.92  # 기본값
+            if results_path.exists():
+                try:
+                    with open(results_path, 'r', encoding='utf-8') as f:
+                        training_results = json.load(f)
+                        visit_results = training_results.get('visit_model_results', {})
+                        if visit_results:
+                            model_accuracy = visit_results.get('cv_r2_mean', visit_results.get('final_r2', 0.92))
+                except Exception as e:
+                    print(f"[API] 학습 결과 로드 오류: {e}")
+            
+            return {
+                "total_visits": int(total_visits),
+                "avg_daily_visits": int(avg_daily_visits),
+                "avg_crowd_level": float(avg_crowd_level),
+                "model_accuracy": float(model_accuracy),
+                "active_spaces": len(cultural_spaces),
+                "period_days": days_diff,
+                "start_date": start_date,
+                "end_date": end_date,
+                "is_period": True
+            }
+        else:
+            # 단일 날짜 통계 (기존 로직)
+            if not date:
+                date = datetime.now().strftime('%Y-%m-%d')
+            
+            # 예측 데이터 가져오기
+            cultural_spaces = ["헤이리예술마을", "파주출판단지", "교하도서관", "파주출판도시", "파주문화센터"]
+            predictions = predictor.predict_cultural_space_visits(cultural_spaces, date, "afternoon")
+            
+            # 통계 계산
+            total_visits = sum(p.get('predicted_visit', 0) for p in predictions)
+            avg_crowd_level = sum(p.get('crowd_level', 0) for p in predictions) / len(predictions) if predictions else 0
+            
+            # 실제 학습 결과에서 모델 정확도 가져오기
+            import json
+            results_path = project_root / "src" / "output" / "curation_training_results.json"
+            model_accuracy = 0.92  # 기본값
+            if results_path.exists():
+                try:
+                    with open(results_path, 'r', encoding='utf-8') as f:
+                        training_results = json.load(f)
+                        visit_results = training_results.get('visit_model_results', {})
+                        if visit_results:
+                            model_accuracy = visit_results.get('cv_r2_mean', visit_results.get('final_r2', 0.92))
+                except Exception as e:
+                    print(f"[API] 학습 결과 로드 오류: {e}")
+            
+            return {
+                "total_visits": total_visits,
+                "avg_crowd_level": float(avg_crowd_level),
+                "model_accuracy": float(model_accuracy),  # 실제 학습 결과 기반
+                "active_spaces": len(predictions),
+                "is_period": False
+            }
     except Exception as e:
         print(f"[API] 통계 조회 오류: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/analytics/trends")
@@ -484,16 +554,16 @@ async def get_trends(start_date: str = None, end_date: str = None):
         if not end_date:
             end_date = datetime.now().strftime('%Y-%m-%d')
         
-        # 날짜 범위 제한 (최대 30일)
+        # 날짜 범위 제한 (최대 3일) - 초과 시 자동으로 3일로 조정
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
         days_diff = (end_dt - start_dt).days + 1
         
-        if days_diff > 30:
-            # 30일을 초과하면 최근 30일만 사용
-            start_dt = end_dt - timedelta(days=29)
-            start_date = start_dt.strftime('%Y-%m-%d')
-            days_diff = 30
+        if days_diff > 3:
+            # 자동으로 3일로 제한
+            end_dt = start_dt + timedelta(days=2)  # 시작일 포함 3일
+            end_date = end_dt.strftime('%Y-%m-%d')
+            days_diff = 3
         
         # 실제 ML 예측을 사용하여 트렌드 데이터 생성
         cultural_spaces = ["헤이리예술마을", "파주출판단지", "교하도서관", "파주출판도시", "파주문화센터"]
@@ -916,7 +986,7 @@ async def get_action_items(request: Dict):
         model_accuracy = model_accuracy * 100 if model_accuracy <= 1 else model_accuracy
         mae = model_metrics.get('cv_mae_mean') or model_metrics.get('mae', 0)
         
-        # 문화 공간별 상세 정보 추출
+        # 문화 공간별 상세 정보 추출 (큐레이션 메트릭 포함)
         space_details = []
         for p in predictions[:5]:
             space_name = p.get('space', p.get('spot', 'N/A'))
@@ -924,42 +994,95 @@ async def get_action_items(request: Dict):
             optimal_time = p.get('optimal_time', 'N/A')
             predicted_visit = p.get('predicted_visit', 0)
             
-            space_details.append(f"""
+            # 큐레이션 메트릭 추출
+            curation_metrics = p.get('curation_metrics', {})
+            recommended_programs = p.get('recommended_programs', [])
+            
+            # 큐레이션 메트릭 요약
+            curation_summary = []
+            if curation_metrics:
+                for program_type, metrics in curation_metrics.items():
+                    if isinstance(metrics, dict):
+                        recommendation_score = metrics.get('recommendation_score', 0)
+                        time_suitability = metrics.get('time_suitability', 0)
+                        overall_score = metrics.get('overall_score', 0)
+                        if recommendation_score > 0.5 or time_suitability > 70:
+                            curation_summary.append(f"  - {program_type}: 추천도 {recommendation_score:.2f}, 시간 적합도 {time_suitability:.0f}%, 종합 점수 {overall_score:.1f}")
+            
+            space_detail = f"""
 - **{space_name}**:
   - 예측 방문 수: {predicted_visit:,}명
   - 혼잡도: {crowd_level:.1f}%
   - 최적 시간: {optimal_time}
-""")
+  - 추천 프로그램: {', '.join(recommended_programs) if recommended_programs else '없음'}
+"""
+            if curation_summary:
+                space_detail += "  - 큐레이션 메트릭:\n" + "\n".join(curation_summary[:3])  # 최대 3개만 표시
+            
+            space_details.append(space_detail)
         
         # 날짜 레이블 생성
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         date_label = date_obj.strftime('%Y년 %m월 %d일')
+        
+        # 주말/평일 패턴 분석
+        is_weekend = date_obj.weekday() >= 5
+        weekend_info = f"주말" if is_weekend else "평일"
+        
+        # 통계에서 추가 정보 추출
+        active_spaces = statistics.get('active_spaces', 0)
+        avg_daily_visits = statistics.get('avg_daily_visits', 0)
+        
+        # 주말/평일 패턴 분석 강화
+        weekend_context = ""
+        if is_weekend:
+            weekend_context = """
+**주말 패턴 분석**:
+- 이 날짜는 주말(토요일 또는 일요일)입니다
+- 일반적으로 주말에는 평일보다 방문객이 1.4-1.5배 많습니다
+- 주말 방문객은 가족 단위, 여가 활동 중심으로 문화 프로그램 참여율이 높습니다
+- 주말 특별 프로그램이나 이벤트 운영이 매우 효과적입니다
+"""
+        else:
+            weekend_context = """
+**평일 패턴 분석**:
+- 이 날짜는 평일(월~금)입니다
+- 평일 방문객은 업무 후 방문 또는 개인 취미 활동 중심입니다
+- 저녁 시간대(18:00-20:00) 프로그램 운영이 효과적입니다
+- 평일은 주말보다 방문객이 상대적으로 적지만, 충성도 높은 방문객이 많습니다
+"""
         
         # 액션 아이템 생성 프롬프트
         prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 전략 어시스턴트입니다.
 분석된 데이터를 바탕으로 **당장 실행 가능한** 활성화 액션 아이템을 제시해주세요.
 
 **분석 기준 날짜**: {date_label} ({date})
+**날짜 유형**: {weekend_info} ({"주말" if is_weekend else "평일"})
+{weekend_context}
 
 **현재 상황**:
 - 전체 예상 방문자: {total_visits:,}명
+- 평균 일일 방문자: {avg_daily_visits:.0f}명
 - 평균 혼잡도: {avg_crowd:.1f}%
+- 활성 문화 공간 수: {active_spaces}개
 - ML 모델 정확도: {model_accuracy:.1f}%
 - 평균 예측 오차: {mae:.0f}명
 
-**문화 공간별 예측 상세**:
+**문화 공간별 예측 상세 (큐레이션 메트릭 포함)**:
 {''.join(space_details)}
 
 **요구사항**:
 1. **당장 실행 가능한** 구체적인 액션 아이템만 제시하세요 (오늘 또는 이번 주 내 실행 가능)
 2. 출판단지 활성화와 직접 연관된 실질적인 전략이어야 합니다
-3. 각 액션은 다음 형식으로 작성해주세요:
+3. **{weekend_info} 패턴을 반드시 고려하세요**: 주말이면 주말 특화 프로그램/이벤트를, 평일이면 평일 시간대에 맞는 프로그램을 제안하세요
+4. 큐레이션 메트릭에서 추천된 프로그램 타입을 활용하여 구체적인 액션 아이템을 제시하세요
+5. 각 액션은 다음 형식으로 작성해주세요:
    - 제목: 간결하고 명확한 액션명 (15자 이내)
    - 설명: 실행 방법과 기대 효과 (50자 이내)
    - 우선순위: High/Medium/Low
    - 담당부서/역할: 누가 실행할 수 있는지
    - 실행 시기: 오늘/이번 주/이번 달
-4. 액션 아이템은 5-7개 정도로 제한하세요
+6. 액션 아이템은 5-7개 정도로 제한하세요
 
 **응답 형식** (JSON):
 {{
@@ -979,22 +1102,43 @@ async def get_action_items(request: Dict):
 }}
 
 각 액션 아이템은 다음 기준으로 우선순위를 정하세요:
-- **High**: 즉시 실행하면 큰 효과를 볼 수 있는 항목 (혼잡도 높은 시간대 프로그램, 특별 이벤트 등)
+- **High**: 즉시 실행하면 큰 효과를 볼 수 있는 항목 ({"주말 특별 프로그램, 가족 단위 이벤트" if is_weekend else "평일 저녁 시간대 프로그램, 업무 후 문화 활동"})
 - **Medium**: 단기간 내 실행 가능한 전략적 항목 (프로그램 시간 조정, 마케팅 강화 등)
 - **Low**: 중장기적으로 고려할 항목 (시설 개선, 장기 프로그램 등)
+
+**중요**: {weekend_info} 특성을 반영하여 액션 아이템을 생성하세요. 예를 들어:
+- 주말이면: 가족 단위 프로그램, 주말 특별 이벤트, 야외 활동 등
+- 평일이면: 저녁 시간대 프로그램, 업무 후 문화 활동, 개인 취미 프로그램 등
 
 응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
 """
         
         # LLM 호출
+        print(f"[API] 액션 아이템 생성 - LLM 호출 시작 (날짜: {date}, {weekend_info})")
+        print(f"[API] 프롬프트 길이: {len(prompt)} 문자")
+        
+        if content_generator is None:
+            print(f"[API] 경고: content_generator가 None입니다. 기본값 반환")
+            raise HTTPException(status_code=503, detail="LLM 서비스가 초기화되지 않았습니다.")
+        
         response = content_generator.analyze_data(prompt)
         
-        # 응답 파싱 및 검증
+        print(f"[API] LLM 응답 타입: {type(response)}")
         if isinstance(response, dict):
+            print(f"[API] LLM 응답 키: {list(response.keys())}")
             if 'action_items' in response:
-                return response
+                action_items_list = response.get('action_items', [])
+                action_items_count = len(action_items_list)
+                print(f"[API] LLM 생성 액션 아이템 {action_items_count}개 반환")
+                if action_items_count > 0:
+                    print(f"[API] 첫 번째 액션 아이템: {action_items_list[0]}")
+                    return response
+                else:
+                    print(f"[API] 경고: action_items 배열이 비어있음")
             else:
                 # action_items 키가 없는 경우, 응답을 변환 시도
+                print(f"[API] LLM 응답에 'action_items' 키가 없음. 다른 키 검색 중...")
+                print(f"[API] LLM 응답 전체: {json.dumps(response, ensure_ascii=False, indent=2)[:500]}")
                 action_items = []
                 if 'recommendations' in response:
                     for idx, rec in enumerate(response['recommendations'][:7], 1):
@@ -1011,6 +1155,7 @@ async def get_action_items(request: Dict):
                 
                 if not action_items:
                     # 기본 액션 아이템 생성
+                    print(f"[API] LLM 응답을 파싱할 수 없어 기본 액션 아이템 생성")
                     action_items = [
                         {
                             "id": 1,
@@ -1047,6 +1192,8 @@ async def get_action_items(request: Dict):
                 return {"action_items": action_items}
         else:
             # 문자열 응답인 경우 기본값 반환
+            print(f"[API] LLM 응답이 문자열 또는 예상치 못한 타입: {type(response)}")
+            print(f"[API] LLM 응답 내용 (처음 500자): {str(response)[:500]}")
             return {
                 "action_items": [
                     {

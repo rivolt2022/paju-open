@@ -1,5 +1,5 @@
 {
-  "training_date": "2025-11-04T20:35:49.391677",
+  "training_date": "2025-11-05T09:37:16.949640",
   "model_type": "Random Forest (Curation Focused)",
   "validation_method": "K-Fold Cross Validation (5 folds)",
   "models": {
@@ -55,6 +55,7 @@
   "feature_names": [
     "연도",
     "월",
+    "is_weekend",
     "북토크_recommendation_score",
     "작가 사인회_recommendation_score",
     "전시회_recommendation_score",
@@ -74,7 +75,6 @@
     "day_of_year",
     "week_of_year",
     "quarter",
-    "is_weekend",
     "season",
     "is_holiday",
     "is_month_start",

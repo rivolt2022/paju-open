@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import LoadingSpinner from './LoadingSpinner'
 import './HeatmapView.css'
 
 function HeatmapView({ predictions, date }) {
@@ -23,6 +24,14 @@ function HeatmapView({ predictions, date }) {
   }
 
   const [heatmapData] = useState(generateHeatmapData())
+
+  if (!predictions) {
+    return (
+      <div className="heatmap-loading">
+        <LoadingSpinner message="히트맵 데이터를 불러오는 중..." size="medium" />
+      </div>
+    )
+  }
 
   const getIntensity = (value) => {
     if (value < 0.4) return 'low'

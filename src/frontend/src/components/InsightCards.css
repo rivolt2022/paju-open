@@ -3,6 +3,14 @@
   margin-bottom: 0;
 }
 
+.insight-cards-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+}
+
 .section-header {
   margin-bottom: 1.5rem;
 }

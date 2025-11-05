@@ -1,0 +1,344 @@
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+INFO:     Will watch for changes in these directories: ['C:\\Users\\PC\\Documents\\workspace\\paju-open\\src\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [5188] using WatchFiles
+
+[Backend] ML 모델 로드 중...
+[InferencePredictor] 메타데이터 로드 성공: C:\Users\PC\Documents\workspace\paju-open\src\ml\models\saved\curation_models_metadata.json
+[InferencePredictor] 방문인구 예측 모델 로드 성공: C:\Users\PC\Documents\workspace\paju-open\src\ml\models\saved\spatiotemporal_model.pkl
+[InferencePredictor] 모델 로드 성공: 북토크_score
+[InferencePredictor] 모델 로드 성공: 북토크_suitability
+[InferencePredictor] 모델 로드 성공: 북토크_match
+[InferencePredictor] 모델 로드 성공: 작가 사인회_score
+[InferencePredictor] 모델 로드 성공: 작가 사인회_suitability
+[InferencePredictor] 모델 로드 성공: 작가 사인회_match
+[InferencePredictor] 모델 로드 성공: 전시회_score
+[InferencePredictor] 모델 로드 성공: 전시회_suitability
+[InferencePredictor] 모델 로드 성공: 전시회_match
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_score
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_suitability
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_match
+[InferencePredictor] 총 12개 모델 로드 완료
+[Backend] 큐레이션 모델 로드 완료 (로드된 모델 수: 12)
+[Backend] 생성형 AI 초기화 중...
+[Backend] 생성형 AI 초기화 완료
+[InferencePredictor] 메타데이터 로드 성공: C:\Users\PC\Documents\workspace\paju-open\src\ml\models\saved\curation_models_metadata.json
+[InferencePredictor] 방문인구 예측 모델 로드 성공: C:\Users\PC\Documents\workspace\paju-open\src\ml\models\saved\spatiotemporal_model.pkl
+[InferencePredictor] 모델 로드 성공: 북토크_score
+[InferencePredictor] 모델 로드 성공: 북토크_suitability
+[InferencePredictor] 모델 로드 성공: 북토크_match
+[InferencePredictor] 모델 로드 성공: 작가 사인회_score
+[InferencePredictor] 모델 로드 성공: 작가 사인회_suitability
+[InferencePredictor] 모델 로드 성공: 작가 사인회_match
+[InferencePredictor] 모델 로드 성공: 전시회_score
+[InferencePredictor] 모델 로드 성공: 전시회_suitability
+[InferencePredictor] 모델 로드 성공: 전시회_match
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_score
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_suitability
+[InferencePredictor] 모델 로드 성공: 문화 프로그램_match
+[InferencePredictor] 총 12개 모델 로드 완료
+[Backend] 유의미한 지표 서비스 초기화 중...
+[지표 계산] 데이터 로드 중...
+[지표 계산] 데이터 로드 완료
+[Backend] 유의미한 지표 서비스 초기화 완료
+INFO:     Started server process [39592]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:60927 - "OPTIONS /api/predict/visits HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-15: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-15 (주말): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-15: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-15: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-15: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-15: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주문화센터
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-15: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-15 (주말): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-15: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-15: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-15: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-15: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주문화센터
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-15: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-15 (주말): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-15: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-15: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-15: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-15: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주문화센터
+INFO:     127.0.0.1:60965 - "GET /api/analytics/trends?start_date=2025-11-15&end_date=2025-11-15 HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-15: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-15 (주말): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-15: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-15: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-15: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-15: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주문화센터
+INFO:     127.0.0.1:57735 - "GET /api/analytics/statistics?date=2025-11-15 HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-15: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-15 (주말): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-15: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-15: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-15: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-15: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-15 (주말): 예측값=1885, 사용된 feature=space_파주문화센터
+[API] 예측 요청 - 날짜: 2025-11-15, 문화 공간: ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터'], 시간대: afternoon
+[API] 예측 결과: [{'space': '헤이리예술마을', 'date': '2025-11-15', 'predicted_visit': 25728, 'crowd_level': 0.25728, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398987, 'time_suitability': 90.0, 'demographic_match': 4.010198954987475, 'overall_score': 28.3884355409922, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.4614547882024133, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.717641601777206, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 4.010198954987475, 'overall_score': 24.586361720540513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6208614829437306, 'time_suitability': 71.1, 'demographic_match': 4.010198954987475, 'overall_score': 22.781404279673733, 'recommended': False}}}, {'space': '파주출판단지', 'date': '2025-11-15', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398985, 'time_suitability': 90.0, 'demographic_match': 4.010198954987475, 'overall_score': 28.3884355409922, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.46145478820241315, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.717641601777206, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 4.010198954987475, 'overall_score': 24.586361720540513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6208614829437306, 'time_suitability': 71.1, 'demographic_match': 4.010198954987475, 'overall_score': 22.781404279673733, 'recommended': False}}}, {'space': '교하도서관', 'date': '2025-11-15', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398986, 'time_suitability': 90.0, 'demographic_match': 4.010198954987476, 'overall_score': 28.3884355409922, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.4614547882024133, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.717641601777206, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 4.010198954987475, 'overall_score': 24.586361720540513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6208614829437306, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.781404279673733, 'recommended': False}}}, {'space': '파주출판도시', 'date': '2025-11-15', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398985, 'time_suitability': 90.0, 'demographic_match': 4.010198954987475, 'overall_score': 28.3884355409922, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.4614547882024132, 'time_suitability': 71.1, 'demographic_match': 4.010198954987475, 'overall_score': 22.717641601777206, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 4.010198954987474, 'overall_score': 24.586361720540513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6208614829437304, 'time_suitability': 71.1, 'demographic_match': 4.010198954987475, 'overall_score': 22.781404279673733, 'recommended': False}}}, {'space': '파주문화센터', 'date': '2025-11-15', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398986, 'time_suitability': 90.0, 'demographic_match': 4.010198954987475, 'overall_score': 28.3884355409922, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.4614547882024131, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.717641601777206, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 4.010198954987475, 'overall_score': 24.586361720540513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6208614829437304, 'time_suitability': 71.1, 'demographic_match': 4.010198954987476, 'overall_score': 22.781404279673733, 'recommended': False}}}]
+INFO:     127.0.0.1:60927 - "POST /api/predict/visits HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60927 - "OPTIONS /api/analytics/action-items HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:60927 - "POST /api/analytics/action-items HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:60927 - "POST /api/analytics/action-items HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:51517 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-13 HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-13: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-13 (평일): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-13: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-13: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-13: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-13: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주문화센터
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-13: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-13 (평일): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-13: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-13: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-13: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-13: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주문화센터
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-13: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-13 (평일): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-13: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-13: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-13: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-13: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주문화센터
+INFO:     127.0.0.1:58818 - "GET /api/analytics/trends?start_date=2025-11-13&end_date=2025-11-13 HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-13: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-13 (평일): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-13: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-13: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-13: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-13: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주문화센터
+[API] 예측 요청 - 날짜: 2025-11-13, 문화 공간: ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터'], 시간대: afternoon
+[API] 예측 결과: [{'space': '헤이리예술마을', 'date': '2025-11-13', 'predicted_visit': 25728, 'crowd_level': 0.25728, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398985, 'time_suitability': 90.0, 'demographic_match': 3.9998437674874747, 'overall_score': 28.385328984742202, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.45370963639761, 'time_suitability': 60.0, 'demographic_match': 3.9998437674874747, 'overall_score': 19.381436984805287, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106797, 'time_suitability': 75.0, 'demographic_match': 3.999843767487475, 'overall_score': 24.583255164290513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6182974691090587, 'time_suitability': 60.0, 'demographic_match': 3.999843767487475, 'overall_score': 19.447272117889867, 'recommended': False}}}, {'space': '파주출판단지', 'date': '2025-11-13', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398985, 'time_suitability': 90.0, 'demographic_match': 3.999843767487475, 'overall_score': 28.385328984742202, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.45370963639761014, 'time_suitability': 60.0, 'demographic_match': 3.999843767487475, 'overall_score': 19.381436984805287, 'recommended': False}, '전시회': {'recommendation_score': 2.208255085110679, 'time_suitability': 75.0, 'demographic_match': 3.999843767487476, 'overall_score': 24.583255164290513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6182974691090588, 'time_suitability': 60.0, 'demographic_match': 3.9998437674874747, 'overall_score': 19.447272117889867, 'recommended': False}}}, {'space': '교하도서관', 'date': '2025-11-13', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398986, 'time_suitability': 90.0, 'demographic_match': 3.9998437674874747, 'overall_score': 28.385328984742202, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.45370963639760986, 'time_suitability': 60.0, 'demographic_match': 3.999843767487476, 'overall_score': 19.381436984805287, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 3.9998437674874747, 'overall_score': 24.583255164290513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6182974691090589, 'time_suitability': 60.0, 'demographic_match': 3.9998437674874743, 'overall_score': 19.447272117889867, 'recommended': False}}}, {'space': '파주출판도시', 'date': '2025-11-13', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.4634396362398984, 'time_suitability': 90.0, 'demographic_match': 3.9998437674874747, 'overall_score': 28.385328984742202, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.4537096363976099, 'time_suitability': 60.0, 'demographic_match': 3.9998437674874743, 'overall_score': 19.381436984805287, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 3.999843767487475, 'overall_score': 24.583255164290513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6182974691090587, 'time_suitability': 60.0, 'demographic_match': 3.9998437674874743, 'overall_score': 19.447272117889867, 'recommended': False}}}, {'space': '파주문화센터', 'date': '2025-11-13', 'predicted_visit': 1885, 'crowd_level': 0.01885, 'optimal_time': '14:00-17:00', 'recommended_programs': ['북토크'], 'confidence': 0.85, 'curation_metrics': {'북토크': {'recommendation_score': 0.46343963623989864, 'time_suitability': 90.0, 'demographic_match': 3.9998437674874747, 'overall_score': 28.385328984742202, 'recommended': False}, '작가 사인회': {'recommendation_score': 0.45370963639761, 'time_suitability': 60.0, 'demographic_match': 3.999843767487474, 'overall_score': 19.381436984805287, 'recommended': False}, '전시회': {'recommendation_score': 2.2082550851106792, 'time_suitability': 75.0, 'demographic_match': 3.9998437674874765, 'overall_score': 24.583255164290513, 'recommended': False}, '문화 프로그램': {'recommendation_score': 0.6182974691090588, 'time_suitability': 60.0, 'demographic_match': 3.999843767487476, 'overall_score': 19.447272117889867, 'recommended': False}}}]
+INFO:     127.0.0.1:59329 - "POST /api/predict/visits HTTP/1.1" 200 OK
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 헤이리예술마을 2025-11-13: 공간 feature 설정 완료 - space_헤이리예술마을=1 (인덱스: 63)
+[InferencePredictor] 활성화된 공간 feature: ['space_헤이리예술마을']
+[InferencePredictor] 헤이리예술마을 2025-11-13 (평일): 예측값=25728, 사용된 feature=space_헤이리예술마을
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판단지 2025-11-13: 공간 feature 설정 완료 - space_파주출판단지=1 (인덱스: 61)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판단지']
+[InferencePredictor] 파주출판단지 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판단지
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 교하도서관 2025-11-13: 공간 feature 설정 완료 - space_교하도서관=1 (인덱스: 57)
+[InferencePredictor] 활성화된 공간 feature: ['space_교하도서관']
+[InferencePredictor] 교하도서관 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_교하도서관
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주출판도시 2025-11-13: 공간 feature 설정 완료 - space_파주출판도시=1 (인덱스: 62)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주출판도시']
+[InferencePredictor] 파주출판도시 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주출판도시
+[InferencePredictor] 모델이 학습한 공간 feature: ['space_DMZ평화관광', 'space_공릉관광지', 'space_교하도서관', 'space_마장호수출렁다리', 'space_임진각평화누리']... (총 9개)
+[InferencePredictor] 파주문화센터 2025-11-13: 공간 feature 설정 완료 - space_파주문화센터=1 (인덱스: 60)
+[InferencePredictor] 활성화된 공간 feature: ['space_파주문화센터']
+[InferencePredictor] 파주문화센터 2025-11-13 (평일): 예측값=1885, 사용된 feature=space_파주문화센터
+INFO:     127.0.0.1:59804 - "GET /api/analytics/statistics?date=2025-11-13 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51517 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-13 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60927 - "OPTIONS /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:59804 - "POST /api/analytics/action-items HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56141 - "OPTIONS /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51517 - "GET /api/analytics/publishing-vitality?date=2025-11-13 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:60927 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56141 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:56141 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:60927 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56141 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:60927 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56141 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58459 - "OPTIONS /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57754 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55696 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56141 - "OPTIONS /api/analytics/comprehensive-publishing-analysis HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:57754 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:58459 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56141 - "POST /api/analytics/comprehensive-publishing-analysis HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55696 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:56573 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:56573 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56573 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56573 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:58271 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58960 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61689 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:54391 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:58271 - "POST /api/analytics/comprehensive-publishing-analysis HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:58960 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61689 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:65218 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+
+[지표 계산] 헤이리예술마을 종합 지표 계산 중...
+[지표 계산] 종합 지표 계산 완료
+INFO:     127.0.0.1:65218 - "GET /api/analytics/meaningful-metrics?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65218 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:65218 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:57729 - "POST /api/llm/chart-insight HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:54531 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64156 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52291 - "GET /api/analytics/activation-scores?space_name=%ED%97%A4%EC%9D%B4%EB%A6%AC%EC%98%88%EC%88%A0%EB%A7%88%EC%9D%84&date=2025-11-05 HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:54531 - "POST /api/analytics/comprehensive-publishing-analysis HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.upstage.ai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:64156 - "POST /api/llm/explain-metric HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52291 - "GET /api/analytics/publishing-vitality?date=2025-11-05 HTTP/1.1" 200 OK

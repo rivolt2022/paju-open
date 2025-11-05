@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { MdRocketLaunch, MdAccessTime, MdGpsFixed, MdBarChart, MdLightbulb } from 'react-icons/md'
+import LoadingSpinner from './LoadingSpinner'
 import './InsightCards.css'
 
 function InsightCards({ predictions, statistics, onMetricClick, date = null }) {
@@ -66,6 +67,14 @@ function InsightCards({ predictions, statistics, onMetricClick, date = null }) {
     return [...predictions.predictions]
       .sort((a, b) => (b.predicted_visit || 0) - (a.predicted_visit || 0))
       .slice(0, 3)
+  }
+
+  if (!predictions || !predictions.predictions || predictions.predictions.length === 0) {
+    return (
+      <div className="insight-cards-loading">
+        <LoadingSpinner message="인사이트 데이터를 불러오는 중..." size="medium" />
+      </div>
+    )
   }
 
   return (

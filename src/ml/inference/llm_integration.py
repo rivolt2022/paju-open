@@ -294,12 +294,15 @@ JSON 형식으로 응답해주세요:
     def _parse_analysis_response(self, response: str) -> Dict:
         """분석 응답 파싱"""
         try:
+            print(f"[ContentGenerator] _parse_analysis_response 시작 - 응답 길이: {len(response)} 문자")
             # JSON 형식으로 응답 받기
             if '{' in response and '}' in response:
                 json_start = response.find('{')
                 json_end = response.rfind('}') + 1
                 json_str = response[json_start:json_end]
+                print(f"[ContentGenerator] JSON 추출 시도 - 시작: {json_start}, 끝: {json_end}")
                 parsed = json.loads(json_str)
+                print(f"[ContentGenerator] JSON 파싱 성공 - 키: {list(parsed.keys())}")
                 
                 # 다양한 응답 형식 지원
                 # 1. explain-metric 형식 (explanation, importance, interpretation, recommendation)
@@ -318,14 +321,50 @@ JSON 형식으로 응답해주세요:
                 if 'summary' in parsed or 'insights' in parsed or 'recommendations' in parsed:
                     return parsed
                 
-                # 5. 그 외 모든 키가 있는 경우도 반환
-                if parsed:
+                # 5. action_items 형식 (액션 아이템 생성)
+                if 'action_items' in parsed:
+                    print(f"[ContentGenerator] action_items 발견 - {len(parsed.get('action_items', []))}개")
                     return parsed
+                
+                # 6. 그 외 모든 키가 있는 경우도 반환
+                if parsed:
+                    print(f"[ContentGenerator] 파싱된 dict 반환 (action_items 없음)")
+                    return parsed
+        except json.JSONDecodeError as e:
+            print(f"[ContentGenerator] JSON 파싱 실패: {e}")
+            print(f"[ContentGenerator] JSON 추출 시도 - 응답 처음 500자: {response[:500]}")
+            print(f"[ContentGenerator] JSON 추출 시도 - 응답 마지막 500자: {response[-500:]}")
+            # JSON 파싱 실패 시에도 마크다운 코드 블록이나 다른 형식에서 추출 시도
+            import re
+            # ```json ... ``` 형식 찾기
+            json_match = re.search(r'```json\s*(\{.*?\})\s*```', response, re.DOTALL)
+            if json_match:
+                try:
+                    parsed = json.loads(json_match.group(1))
+                    print(f"[ContentGenerator] 마크다운 코드 블록에서 JSON 추출 성공")
+                    if 'action_items' in parsed:
+                        return parsed
+                    return parsed
+                except:
+                    pass
+            # ``` ... ``` 형식 찾기 (json 없이)
+            json_match = re.search(r'```\s*(\{.*?\})\s*```', response, re.DOTALL)
+            if json_match:
+                try:
+                    parsed = json.loads(json_match.group(1))
+                    print(f"[ContentGenerator] 마크다운 코드 블록(2)에서 JSON 추출 성공")
+                    if 'action_items' in parsed:
+                        return parsed
+                    return parsed
+                except:
+                    pass
         except Exception as e:
-            print(f"JSON 파싱 실패: {e}")
-            print(f"응답 원문: {response[:500]}")
+            print(f"[ContentGenerator] 예상치 못한 오류: {e}")
+            import traceback
+            traceback.print_exc()
         
         # 파싱 실패 시 기본값 - 하지만 빈 객체를 반환하여 호출자가 처리하도록 함
+        print(f"[ContentGenerator] 파싱 실패 - 빈 dict 반환")
         return {}
     
     def generate_tips(self, space: str, predictions: List[Dict]) -> str:

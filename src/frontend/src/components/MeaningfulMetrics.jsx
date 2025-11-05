@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadialBarChart, RadialBar } from 'recharts'
 import { MdStar, MdPeople, MdEvent, MdLocationCity, MdTrendingUp, MdLink, MdMenuBook, MdLightbulb, MdCheckCircle, MdDescription } from 'react-icons/md'
+import LoadingSpinner from './LoadingSpinner'
 import LLMReportModal from './LLMReportModal'
 import axios from 'axios'
 import './MeaningfulMetrics.css'
@@ -13,22 +14,11 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
   const [vitality, setVitality] = useState(null)
   const [loading, setLoading] = useState(true)
   
-  // 날짜 범위 포맷 함수
-  const formatDateRange = (start, end) => {
-    if (!start) return ''
-    const startDateObj = new Date(start)
-    const startFormatted = startDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-    
-    // endDate가 있고 startDate와 다르면 날짜 범위 표시
-    if (end && end !== start) {
-      const endDateObj = new Date(end)
-      const endFormatted = endDateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-      return `${startFormatted} ~ ${endFormatted}`
-    }
-    
-    // 단일 날짜면 요일 포함
-    const weekday = startDateObj.toLocaleDateString('ko-KR', { weekday: 'long' })
-    return `${startFormatted} (${weekday})`
+  // 날짜 포맷 함수 (단일 날짜만 사용)
+  const formatDateLabel = (dateValue) => {
+    if (!dateValue) return ''
+    const dateObj = new Date(dateValue)
+    return dateObj.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
   }
   
   // LLM 설명 상태 관리
@@ -117,17 +107,19 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
   const [comprehensiveAnalysis, setComprehensiveAnalysis] = useState(null)
   const [comprehensiveAnalysisLoading, setComprehensiveAnalysisLoading] = useState(false)
 
-  useEffect(() => {
-    // 모든 주요 데이터가 로드되면 종합 분석 생성
-    if (metrics && activationScores && vitality && !comprehensiveAnalysis && !comprehensiveAnalysisLoading) {
-      generateComprehensiveAnalysis()
+  const generateComprehensiveAnalysis = useCallback(async () => {
+    console.log('[MeaningfulMetrics] generateComprehensiveAnalysis 호출됨')
+    
+    // 이미 로딩 중이거나 이미 생성된 경우 스킵
+    if (comprehensiveAnalysisLoading || comprehensiveAnalysis) {
+      console.log('[MeaningfulMetrics] 종합 분석 생성 스킵 (이미 로딩 중이거나 생성됨)')
+      return
     }
-  }, [metrics, activationScores, vitality])
-
-  const generateComprehensiveAnalysis = async () => {
+    
     setComprehensiveAnalysisLoading(true)
     
     try {
+      console.log('[MeaningfulMetrics] comprehensive-publishing-analysis API 호출 시작')
       const response = await axios.post(`${API_BASE_URL}/api/analytics/comprehensive-publishing-analysis`, {
         space_name: spaceName,
         date: date || undefined,
@@ -139,8 +131,11 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
           optimal_time_analysis: metrics.optimal_time_analysis
         },
         vitality: vitality
+      }, {
+        timeout: 60000 // 60초 타임아웃
       })
 
+      console.log('[MeaningfulMetrics] comprehensive-publishing-analysis API 응답 받음')
       setComprehensiveAnalysis(response.data)
     } catch (error) {
       console.error('종합 분석 생성 오류:', error)
@@ -156,7 +151,15 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
     } finally {
       setComprehensiveAnalysisLoading(false)
     }
-  }
+  }, [spaceName, date, activationScores, metrics, vitality, comprehensiveAnalysisLoading, comprehensiveAnalysis])
+
+  useEffect(() => {
+    // 모든 주요 데이터가 로드되면 종합 분석 생성
+    if (metrics && activationScores && vitality && !comprehensiveAnalysis && !comprehensiveAnalysisLoading) {
+      console.log('[MeaningfulMetrics] 종합 분석 생성 시작', { metrics: !!metrics, activationScores: !!activationScores, vitality: !!vitality })
+      generateComprehensiveAnalysis()
+    }
+  }, [metrics, activationScores, vitality, comprehensiveAnalysis, comprehensiveAnalysisLoading, generateComprehensiveAnalysis])
 
   const loadMetrics = async () => {
     setLoading(true)
@@ -229,7 +232,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
           ...context
         }
       }, {
-        timeout: 60000  // LLM 응답을 위해 60초로 증가
+        timeout: 120000  // LLM 응답을 위해 120초로 증가
       })
 
       if (timeoutRefs.current[metricKey]) {
@@ -300,7 +303,7 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
           ...context
         }
       }, {
-        timeout: 60000  // LLM 응답을 위해 60초로 증가
+        timeout: 120000  // LLM 응답을 위해 120초로 증가
       })
 
       if (timeoutRefs.current[metricKey]) {
@@ -394,6 +397,26 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
 
   const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe']
 
+  // 초기 로딩 상태
+  if (loading && !metrics && !activationScores && !vitality) {
+    return (
+      <div className="meaningful-metrics">
+        <div className="metrics-header">
+          <div className="metrics-header-top">
+            <h2 className="metrics-title">
+              <MdMenuBook className="header-icon" />
+              출판단지 활성화를 위한 AI 분석
+            </h2>
+          </div>
+          <p className="metrics-subtitle">AI 문화 및 콘텐츠 서비스를 통한 지역 활성화 데이터 분석</p>
+        </div>
+        <div className="metrics-loading-container">
+          <LoadingSpinner message="지표 데이터를 불러오는 중..." size="large" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="meaningful-metrics">
       <div className="metrics-header">
@@ -422,14 +445,13 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
           <h3 className="card-title">
             <MdLightbulb className="card-title-icon" />
             AI 종합 활성화 분석
-            {startDate && endDate && startDate !== endDate && (
-              <span className="date-range-label"> ({formatDateRange(startDate, endDate)})</span>
+            {date && (
+              <span className="date-range-label"> ({formatDateLabel(date)})</span>
             )}
           </h3>
           {comprehensiveAnalysisLoading ? (
             <div className="analysis-loading">
-              <MdLightbulb className="loading-icon" />
-              <p>AI가 출판단지 활성화 데이터를 종합 분석 중입니다...</p>
+              <LoadingSpinner message="AI가 출판단지 활성화 데이터를 종합 분석 중입니다..." size="medium" />
             </div>
           ) : comprehensiveAnalysis ? (
             <div className="comprehensive-analysis-content">

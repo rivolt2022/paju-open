@@ -358,6 +358,22 @@
   color: #6b7280;
 }
 
+.metrics-loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 3rem;
+}
+
+.analysis-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: 200px;
+}
+
 .loading-icon {
   font-size: 3rem;
   color: #667eea;

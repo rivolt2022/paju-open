@@ -2,6 +2,16 @@
   width: 100%;
 }
 
+.heatmap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+  background: var(--surface);
+  border-radius: 12px;
+}
+
 .heatmap-header-label {
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { MdGpsFixed, MdTrendingUp, MdNotifications, MdSmartToy, MdRefresh, MdFlashOn } from 'react-icons/md'
+import LoadingSpinner from './LoadingSpinner'
 import './ActivityFeed.css'
 
 function ActivityFeed({ predictions, statistics, date = null }) {
@@ -8,6 +9,12 @@ function ActivityFeed({ predictions, statistics, date = null }) {
   const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
   useEffect(() => {
+    // predictions나 statistics가 없으면 활동 데이터 생성하지 않음
+    if (!predictions && !statistics) {
+      setActivities([])
+      return
+    }
+    
     // 활동 데이터 생성
     const generateActivities = () => {
       const newActivities = [
@@ -73,7 +80,15 @@ function ActivityFeed({ predictions, statistics, date = null }) {
     }, 30000) // 30초마다 업데이트
 
     return () => clearInterval(interval)
-  }, [predictions, statistics])
+  }, [predictions, statistics, dateLabel])
+
+  if (!predictions && !statistics) {
+    return (
+      <div className="activity-feed-loading">
+        <LoadingSpinner message="활동 피드 데이터를 불러오는 중..." size="medium" />
+      </div>
+    )
+  }
 
   return (
     <div className="activity-feed">

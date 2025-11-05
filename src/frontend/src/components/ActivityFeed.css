@@ -15,6 +15,16 @@
   flex-direction: column;
 }
 
+.activity-feed-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+  background: var(--surface);
+  border-radius: 20px;
+}
+
 .activity-feed::before {
   content: '';
   position: absolute;

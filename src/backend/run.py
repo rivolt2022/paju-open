@@ -30,4 +30,4 @@ if __name__ == "__main__":
     print(f"\n[Backend] 서버 시작...")
     print(f"[Backend] 접속 URL: http://localhost:8000")
     print(f"[Backend] API 문서: http://localhost:8000/docs\n")
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True, timeout_keep_alive=120)

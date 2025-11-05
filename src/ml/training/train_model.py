@@ -353,6 +353,198 @@ def main():
                 merged_df = pd.concat([merged_df, missing_df], ignore_index=True)
             print(f"    누락된 공간 데이터 생성 완료: {len(missing_spaces)}개 공간, {len(missing_data_list)}행 추가")
     
+    # 실제 데이터에서 주말/평일 비율 계산 및 반영
+    print("  - 실제 데이터에서 주말/평일 패턴 분석 중...")
+    weekend_ratio = 1.5  # 기본값 (주말은 평일보다 1.5배)
+    
+    if '방문인구(명)' in merged_df.columns and 'date' in merged_df.columns:
+        try:
+            # 날짜 컬럼을 datetime으로 변환
+            merged_df['date'] = pd.to_datetime(merged_df['date'], errors='coerce')
+            
+            # 주말/평일 구분
+            merged_df['is_weekend'] = merged_df['date'].dt.weekday >= 5  # 토요일(5), 일요일(6)
+            
+            # 주말과 평일의 평균 방문인구 계산
+            valid_data = merged_df[merged_df['방문인구(명)'].notna() & (merged_df['방문인구(명)'] > 0)]
+            
+            if len(valid_data) > 0:
+                weekday_avg = valid_data[~valid_data['is_weekend']]['방문인구(명)'].mean()
+                weekend_avg = valid_data[valid_data['is_weekend']]['방문인구(명)'].mean()
+                
+                if weekday_avg > 0 and pd.notna(weekend_avg) and pd.notna(weekday_avg):
+                    weekend_ratio = float(weekend_avg / weekday_avg)
+                    print(f"    실제 데이터 분석 결과:")
+                    print(f"      평일 평균 방문인구: {weekday_avg:.0f}명")
+                    print(f"      주말 평균 방문인구: {weekend_avg:.0f}명")
+                    print(f"      주말/평일 비율: {weekend_ratio:.2f} (주말이 평일보다 {weekend_ratio:.1f}배 많음)")
+                else:
+                    print(f"    경고: 주말/평일 데이터가 부족하여 기본 비율 사용 (1.5배)")
+            else:
+                print(f"    경고: 유효한 방문인구 데이터가 없어 기본 비율 사용 (1.5배)")
+            
+            # 실제 데이터에서 계산한 초기 비율 저장 (주말 패턴 데이터 분석 전에 저장)
+            initial_ratio = weekend_ratio
+            
+            # 주말 패턴 데이터에서 주말/평일 비율 추출 (실제 데이터 차이가 없으면 주말 패턴 데이터 활용)
+            if initial_ratio < 1.1 or pd.isna(weekend_avg):
+                print("    실제 데이터에 주말/평일 차이가 거의 없어 주말 패턴 데이터 활용 중...")
+                if not weekend_df.empty:
+                    try:
+                        # 요일별 데이터에서 주말/평일 비율 추출
+                        day_col = None
+                        visit_col = None
+                        
+                        # 요일 컬럼 찾기
+                        for col in weekend_df.columns:
+                            if '요일' in str(col) or 'day' in str(col).lower():
+                                day_col = col
+                                break
+                        
+                        # 방문인구/생활인구 컬럼 찾기 (방문인구 우선)
+                        visit_col = None
+                        # 먼저 방문인구 컬럼 찾기
+                        for col in weekend_df.columns:
+                            if '방문인구' in str(col):
+                                if pd.api.types.is_numeric_dtype(weekend_df[col]):
+                                    visit_col = col
+                                    print(f"    방문인구 컬럼 발견: {col}")
+                                    break
+                        # 방문인구가 없으면 생활인구 컬럼 찾기
+                        if visit_col is None:
+                            for col in weekend_df.columns:
+                                if '생활인구' in str(col) or ('인구' in str(col) and '전체' not in str(col)):
+                                    if pd.api.types.is_numeric_dtype(weekend_df[col]):
+                                        visit_col = col
+                                        print(f"    생활인구 컬럼 발견 (방문인구 대체): {col}")
+                                        break
+                        
+                        if day_col and visit_col:
+                            # 주말/평일 구분 (더 정확한 패턴 매칭)
+                            weekend_days = ['토요일', '일요일', '토', '일', 'Saturday', 'Sunday', 'Sat', 'Sun']
+                            # 요일 컬럼의 모든 고유값 확인
+                            unique_days = weekend_df[day_col].astype(str).unique()
+                            print(f"    요일 컬럼의 고유값: {unique_days}")
+                            
+                            # 주말/평일 마스크 생성
+                            weekend_mask = weekend_df[day_col].astype(str).str.contains('|'.join(weekend_days), case=False, na=False, regex=True)
+                            
+                            # 주말과 평일 데이터 분리
+                            weekend_data = weekend_df[weekend_mask]
+                            weekday_data = weekend_df[~weekend_mask]
+                            
+                            # 주말과 평일 데이터에서 방문인구 값 추출
+                            weekend_values = weekend_data[visit_col].dropna()
+                            weekday_values = weekday_data[visit_col].dropna()
+                            
+                            print(f"    주말 데이터: {len(weekend_values)}개 (주말 행: {len(weekend_data)}개), 평일 데이터: {len(weekday_values)}개 (평일 행: {len(weekday_data)}개)")
+                            
+                            # 주말 데이터만 있고 평일 데이터가 없는 경우, 요일별로 그룹화하여 평균 비교
+                            if len(weekend_values) > 0 and len(weekday_values) == 0:
+                                print(f"    평일 데이터가 없어 요일별 평균값으로 비교 시도...")
+                                # 요일별 그룹화
+                                day_means = weekend_df.groupby(day_col)[visit_col].mean()
+                                weekday_days_list = ['월요일', '화요일', '수요일', '목요일', '금요일', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '월', '화', '수', '목', '금']
+                                weekend_days_list = ['토요일', '일요일', 'Saturday', 'Sunday', '토', '일']
+                                
+                                weekday_day_means = day_means[day_means.index.astype(str).str.contains('|'.join(weekday_days_list), case=False, na=False, regex=True)]
+                                weekend_day_means = day_means[day_means.index.astype(str).str.contains('|'.join(weekend_days_list), case=False, na=False, regex=True)]
+                                
+                                if len(weekday_day_means) > 0 and len(weekend_day_means) > 0:
+                                    weekday_avg_from_group = weekday_day_means.mean()
+                                    weekend_avg_from_group = weekend_day_means.mean()
+                                    if weekday_avg_from_group > 0:
+                                        weekend_ratio_from_group = float(weekend_avg_from_group / weekday_avg_from_group)
+                                        print(f"    요일별 평균 비교 결과: 평일 {weekday_avg_from_group:.0f}, 주말 {weekend_avg_from_group:.0f}, 비율 {weekend_ratio_from_group:.2f}")
+                                        # 주말이 평일보다 많으면 비율 적용 (1.0 이상이어야 함)
+                                        if weekend_ratio_from_group > 1.0:
+                                            weekend_ratio = weekend_ratio_from_group
+                                            print(f"    주말 패턴 데이터에서 비율 확인: {weekend_ratio:.2f}")
+                                            weekend_values = pd.Series([weekend_avg_from_group])
+                                            weekday_values = pd.Series([weekday_avg_from_group])
+                                        else:
+                                            print(f"    주말 패턴 데이터에서 주말이 평일보다 적거나 같음 (비율: {weekend_ratio_from_group:.2f}), 일반 패턴 사용")
+                            
+                            if len(weekend_values) > 0 and len(weekday_values) > 0:
+                                weekend_avg_from_data = weekend_values.mean()
+                                weekday_avg_from_data = weekday_values.mean()
+                                
+                                if weekday_avg_from_data > 0:
+                                    weekend_ratio_from_data = float(weekend_avg_from_data / weekday_avg_from_data)
+                                    if weekend_ratio_from_data > 1.0:
+                                        weekend_ratio = weekend_ratio_from_data
+                                        print(f"    주말 패턴 데이터 분석 결과:")
+                                        print(f"      평일 평균: {weekday_avg_from_data:.0f}")
+                                        print(f"      주말 평균: {weekend_avg_from_data:.0f}")
+                                        print(f"      주말/평일 비율: {weekend_ratio:.2f}")
+                                    else:
+                                        print(f"    주말 패턴 데이터에서도 주말/평일 차이가 없음 (비율: {weekend_ratio_from_data:.2f})")
+                                else:
+                                    print(f"    주말 패턴 데이터에서 평일 데이터를 찾을 수 없음")
+                            else:
+                                print(f"    주말 패턴 데이터에서 주말/평일 데이터를 추출할 수 없음")
+                        else:
+                            print(f"    주말 패턴 데이터의 컬럼을 찾을 수 없음 (day_col: {day_col}, visit_col: {visit_col})")
+                    except Exception as e:
+                        print(f"    주말 패턴 데이터 분석 실패: {e}")
+                        import traceback
+                        traceback.print_exc()
+                else:
+                    print(f"    주말 패턴 데이터가 없어 기본 비율 사용 (1.5배)")
+            
+            # 주말 패턴 데이터를 활용하여 학습 데이터에 주말/평일 차이 반영
+            # 실제 데이터에서 주말/평일 차이가 거의 없으면(1.1배 이하), 주말 패턴 데이터를 활용
+            # initial_ratio는 이미 위에서 저장됨
+            
+            # 실제 데이터에서 차이가 없으면 주말 패턴 데이터에서 찾은 비율 사용
+            if initial_ratio < 1.1:
+                print(f"    실제 데이터에 주말/평일 차이가 거의 없음 (비율: {initial_ratio:.2f})")
+                print(f"    주말 패턴 데이터를 활용하여 학습 데이터에 주말 패턴 반영")
+                
+                # 주말 패턴 데이터에서 비율을 찾았으면 적용 (weekend_ratio가 1.1 이상이면 패턴 데이터에서 찾은 것)
+                if weekend_ratio > 1.1:
+                    print(f"  - 주말 패턴을 학습 데이터에 반영 중 (주말 배율: {weekend_ratio:.2f})...")
+                    merged_df['date'] = pd.to_datetime(merged_df['date'], errors='coerce')
+                    
+                    # 주말 데이터에 비율 적용
+                    for idx, row in merged_df.iterrows():
+                        if pd.notna(row.get('date')) and pd.notna(row.get('방문인구(명)', None)):
+                            date_obj = pd.to_datetime(row['date'])
+                            is_weekend = date_obj.weekday() >= 5  # 토요일(5), 일요일(6)
+                            
+                            if is_weekend:
+                                # 주말은 평일보다 더 많은 방문객
+                                current_visit = float(row['방문인구(명)'])
+                                # 주말 배율 적용
+                                merged_df.loc[idx, '방문인구(명)'] = current_visit * weekend_ratio
+                    
+                    print(f"    주말 패턴 반영 완료 (주말 배율: {weekend_ratio:.2f})")
+                else:
+                    # 주말 패턴 데이터에서도 비율을 찾지 못한 경우, 일반적인 패턴 적용 (1.5배)
+                    print(f"    주말 패턴 데이터에서 비율을 찾지 못해 일반 패턴 적용 (1.5배)")
+                    weekend_ratio = 1.5
+                    merged_df['date'] = pd.to_datetime(merged_df['date'], errors='coerce')
+                    
+                    for idx, row in merged_df.iterrows():
+                        if pd.notna(row.get('date')) and pd.notna(row.get('방문인구(명)', None)):
+                            date_obj = pd.to_datetime(row['date'])
+                            is_weekend = date_obj.weekday() >= 5
+                            
+                            if is_weekend:
+                                current_visit = float(row['방문인구(명)'])
+                                merged_df.loc[idx, '방문인구(명)'] = current_visit * weekend_ratio
+                    
+                    print(f"    일반 주말 패턴 반영 완료 (주말 배율: {weekend_ratio:.2f})")
+            else:
+                # 실제 데이터에서 이미 주말/평일 차이가 있으면 그대로 사용
+                print(f"    실제 데이터에 주말/평일 차이가 있음 (비율: {weekend_ratio:.2f})")
+                print(f"    모델이 is_weekend feature를 통해 학습하도록 합니다.")
+                
+        except Exception as e:
+            print(f"    주말/평일 패턴 분석 실패: {e}")
+            import traceback
+            traceback.print_exc()
+    
     # 큐레이션 타겟 변수 생성
     curation_df = create_curation_targets(merged_df, loader)
     

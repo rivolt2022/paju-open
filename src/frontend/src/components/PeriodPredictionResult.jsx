@@ -1,12 +1,12 @@
 import { MdTrendingUp, MdTrendingDown, MdPeople, MdBarChart, MdLocationCity, MdLightbulb } from 'react-icons/md'
+import LoadingSpinner from './LoadingSpinner'
 import './PeriodPredictionResult.css'
 
 function PeriodPredictionResult({ result, loading }) {
   if (loading) {
     return (
       <div className="period-prediction-loading">
-        <div className="spinner"></div>
-        <p>예측 결과를 생성하는 중...</p>
+        <LoadingSpinner message="예측 결과를 생성하는 중..." size="medium" />
       </div>
     )
   }

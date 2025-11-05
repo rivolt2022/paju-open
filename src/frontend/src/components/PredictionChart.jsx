@@ -1,9 +1,14 @@
 import { ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import LoadingSpinner from './LoadingSpinner'
 import './PredictionChart.css'
 
 function PredictionChart({ data, loading, date = null }) {
   if (loading) {
-    return <div className="chart-loading">데이터 로딩 중...</div>
+    return (
+      <div className="chart-loading">
+        <LoadingSpinner message="차트 데이터 로딩 중..." size="medium" />
+      </div>
+    )
   }
 
   if (!data || !data.predictions || data.predictions.length === 0) {

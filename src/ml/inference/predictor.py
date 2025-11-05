@@ -358,14 +358,24 @@ class InferencePredictor:
                     # 모델이 학습한 모든 공간 feature 이름 확인
                     model_space_names = [f.replace('space_', '') for f in model_space_features]
                     
-                    # 정확히 일치하는 경우
+                    # 공간 이름 매핑 테이블 (요청 공간명 -> 학습 데이터의 공간명)
+                    space_mapping = {
+                        '헤이리예술마을': ['헤이리', '예술', '마을'],
+                        '파주출판단지': ['파주', '출판', '단지'],
+                        '교하도서관': ['교하', '도서관'],
+                        '파주출판도시': ['파주', '출판', '도시'],
+                        '파주문화센터': ['파주', '문화', '센터'],
+                        '출판문화정보원': ['출판', '문화', '정보원']
+                    }
+                    
+                    # 1. 정확히 일치하는 경우
                     for model_feat in model_space_features:
                         model_space_name = model_feat.replace('space_', '')
                         if model_space_name == space:
                             current_space_feature = model_feat
                             break
                     
-                    # 일치하지 않으면 부분 일치 시도
+                    # 2. 부분 일치 시도 (공간 이름이 포함되어 있는지)
                     if not current_space_feature:
                         for model_feat in model_space_features:
                             model_space_name = model_feat.replace('space_', '')
@@ -375,9 +385,39 @@ class InferencePredictor:
                                 print(f"[InferencePredictor] 공간 이름 매핑: {space} -> {model_space_name}")
                                 break
                     
-                    # 여전히 없으면 가장 유사한 이름 찾기 (첫 글자 일치)
+                    # 3. 매핑 테이블 기반 키워드 매칭
+                    if not current_space_feature and space in space_mapping:
+                        space_keywords = space_mapping[space]
+                        best_match = None
+                        best_score = 0
+                        for model_feat in model_space_features:
+                            model_space_name = model_feat.replace('space_', '')
+                            # 키워드 매칭 점수 계산
+                            score = sum(1 for keyword in space_keywords if keyword in model_space_name)
+                            if score > best_score:
+                                best_score = score
+                                best_match = model_feat
+                        
+                        if best_match and best_score > 0:
+                            current_space_feature = best_match
+                            model_space_name = best_match.replace('space_', '')
+                            print(f"[InferencePredictor] 키워드 매칭 성공: {space} -> {model_space_name} (점수: {best_score})")
+                    
+                    # 4. 단어 단위 매칭
+                    if not current_space_feature:
+                        space_words = space.replace(' ', '').split()
+                        for model_feat in model_space_features:
+                            model_space_name = model_feat.replace('space_', '')
+                            for word in space_words:
+                                if len(word) >= 2 and word in model_space_name:
+                                    current_space_feature = model_feat
+                                    print(f"[InferencePredictor] 단어 매칭 성공: {space} -> {model_space_name} (via '{word}')")
+                                    break
+                            if current_space_feature:
+                                break
+                    
+                    # 5. 첫 글자 매칭 (최후의 수단)
                     if not current_space_feature and model_space_names:
-                        # 첫 글자로 매칭 시도
                         space_first_char = space[0] if len(space) > 0 else ''
                         for model_feat in model_space_features:
                             model_space_name = model_feat.replace('space_', '')
@@ -388,7 +428,7 @@ class InferencePredictor:
                     
                     # 매칭 실패 시 로그
                     if not current_space_feature:
-                        print(f"[InferencePredictor] 경고: {space}에 대한 feature를 찾을 수 없습니다. 모델이 학습한 공간: {model_space_names}")
+                        print(f"[InferencePredictor] 경고: {space}에 대한 feature를 찾을 수 없습니다. 모델이 학습한 공간: {model_space_names[:10]}")
                     
                     # 모델이 학습하지 않은 공간 feature 제거
                     for feat in features_df_space_features:
@@ -408,8 +448,8 @@ class InferencePredictor:
                     X = self._prepare_features(features_df, required_features, date_obj, space)
                     
                     # 모델이 학습한 feature와 정확히 일치하도록 조정
-                    # 1. 모델이 기대하는 feature만 포함된 DataFrame 생성
-                    X_aligned = pd.DataFrame(index=X.index)
+                    # 1. 모델이 기대하는 feature만 포함된 DataFrame 생성 (복사본 생성)
+                    X_aligned = pd.DataFrame(index=X.index if len(X.index) > 0 else [0])
                     
                     # 2. 모델이 기대하는 모든 feature 추가 (모델이 학습한 순서대로)
                     for feat in required_features:
@@ -418,33 +458,58 @@ class InferencePredictor:
                         else:
                             # 모델이 기대하지만 없는 feature는 기본값으로 채우기
                             if feat.startswith('space_'):
-                                # 공간별 특징: 현재 공간만 1, 나머지 0
-                                # 모델이 학습한 feature 이름 사용
-                                X_aligned[feat] = 1 if (current_space_feature and feat == current_space_feature) else 0
+                                # 공간별 특징: 현재 공간만 1, 나머지 0 (초기값)
+                                X_aligned[feat] = 0
                             else:
                                 X_aligned[feat] = 0.0
                     
                     # 3. 모델이 기대하는 순서로 정렬
-                    X = X_aligned[required_features]
+                    X = X_aligned[required_features].copy()  # 복사본 생성
                     
                     # 4. 공간별 특징 설정 (모델이 학습한 공간만 처리)
                     # 모든 공간 특징을 먼저 0으로 초기화
                     space_feature_cols = [col for col in X.columns if col.startswith('space_')]
                     for col in space_feature_cols:
-                        X[col] = 0
+                        X.iloc[0, X.columns.get_loc(col)] = 0  # 명시적으로 iloc를 사용하여 설정
                     
                     # 현재 공간에 해당하는 특징만 1로 설정 (모델이 학습한 경우에만)
                     if current_space_feature and current_space_feature in X.columns:
-                        X[current_space_feature] = 1
+                        col_idx = X.columns.get_loc(current_space_feature)
+                        X.iloc[0, col_idx] = 1  # 명시적으로 iloc를 사용하여 설정
+                        print(f"[InferencePredictor] {space} {date}: 공간 feature 설정 완료 - {current_space_feature}=1 (인덱스: {col_idx})")
+                    else:
+                        print(f"[InferencePredictor] 경고: {space}에 대한 feature를 찾지 못했습니다. current_space_feature={current_space_feature}")
                     
-                    # 방문인구 예측
+                    # 공간 feature 확인 (디버깅)
+                    active_space_features = []
+                    for col in space_feature_cols:
+                        if X.iloc[0, X.columns.get_loc(col)] == 1:
+                            active_space_features.append(col)
+                    if active_space_features:
+                        print(f"[InferencePredictor] 활성화된 공간 feature: {active_space_features}")
+                    else:
+                        print(f"[InferencePredictor] 경고: 활성화된 공간 feature가 없습니다! 모든 space feature 값: {[(col, X.iloc[0, X.columns.get_loc(col)]) for col in space_feature_cols[:5]]}")
+                    
+                    # is_weekend feature 확인
+                    is_weekend_feature_value = X['is_weekend'].iloc[0] if 'is_weekend' in X.columns else None
+                    is_weekend = date_obj.weekday() >= 5
+                    weekend_status = "주말" if is_weekend else "평일"
+                    
+                    # 디버그: is_weekend feature 값 확인
+                    if 'is_weekend' in X.columns:
+                        print(f"[InferencePredictor] {space} {date} ({weekend_status}): is_weekend feature={X['is_weekend'].iloc[0]}")
+                    else:
+                        print(f"[InferencePredictor] 경고: is_weekend feature가 없습니다!")
+                    
+                    # 방문인구 예측 (모델이 주말/평일 패턴을 학습했으므로 후처리 보정 불필요)
                     visit_prediction = self.visit_model.predict(X)
                     if len(visit_prediction) > 0:
                         predicted_visit = max(0, int(visit_prediction[0]))
                         # 디버그 로그 (공간별로 다른 값 확인)
-                        print(f"[InferencePredictor] {space} {date}: 예측값={predicted_visit}")
+                        print(f"[InferencePredictor] {space} {date} ({weekend_status}): 예측값={predicted_visit}, is_weekend={is_weekend_feature_value}, 사용된 feature={current_space_feature}")
                     else:
                         predicted_visit = 30000
+                        print(f"[InferencePredictor] {space} {date}: 예측값 없음, 기본값 사용")
                 except Exception as e:
                     print(f"[InferencePredictor] 방문인구 예측 오류 ({space}, {date}): {e}")
                     import traceback

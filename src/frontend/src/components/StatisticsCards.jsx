@@ -1,26 +1,42 @@
 import { MdPeople, MdBarChart, MdGpsFixed, MdBusiness } from 'react-icons/md'
+import LoadingSpinner from './LoadingSpinner'
 import './StatisticsCards.css'
 
-function StatisticsCards({ statistics, onMetricClick, date = null }) {
-  if (!statistics) return null
+function StatisticsCards({ statistics, onMetricClick, date = null, startDate = null, endDate = null }) {
+  if (!statistics) {
+    return (
+      <div className="statistics-loading">
+        <LoadingSpinner message="통계 데이터를 불러오는 중..." size="medium" />
+      </div>
+    )
+  }
 
-  const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
+  // 날짜 포맷 함수 (단일 날짜만 사용)
+  const formatDateLabel = (dateValue) => {
+    if (!dateValue) return '오늘'
+    return new Date(dateValue).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' })
+  }
+
+  const dateLabel = formatDateLabel(date || startDate)
+  const isPeriod = false  // 하루만 선택하므로 항상 false
 
   const cards = [
     {
-      title: '총 예측 방문 수',
+      title: isPeriod ? '기간 총 예측 방문 수' : '총 예측 방문 수',
       value: statistics.total_visits?.toLocaleString() || '0',
       rawValue: statistics.total_visits || 0,
       unit: '명',
       icon: <MdPeople />,
       color: 'primary',
-      change: '+5.2%',
+      change: isPeriod && statistics.avg_daily_visits ? `일평균 ${statistics.avg_daily_visits.toLocaleString()}명` : '+5.2%',
       trend: 'up',
       metricType: 'total_visits',
-      description: `${dateLabel} 전체 문화 공간에 예상되는 방문자 수`
+      description: isPeriod 
+        ? `${dateLabel} 전체 문화 공간에 예상되는 총 방문자 수 (${statistics.period_days || 0}일간)`
+        : `${dateLabel} 전체 문화 공간에 예상되는 방문자 수`
     },
     {
-      title: '평균 혼잡도',
+      title: isPeriod ? '기간 평균 혼잡도' : '평균 혼잡도',
       value: (statistics.avg_crowd_level * 100).toFixed(1),
       rawValue: statistics.avg_crowd_level || 0,
       unit: '%',
@@ -29,7 +45,9 @@ function StatisticsCards({ statistics, onMetricClick, date = null }) {
       change: '-2.1%',
       trend: 'down',
       metricType: 'avg_crowd_level',
-      description: '전체 문화 공간의 평균 혼잡 정도'
+      description: isPeriod
+        ? `${dateLabel} 전체 문화 공간의 평균 혼잡 정도`
+        : '전체 문화 공간의 평균 혼잡 정도'
     },
     {
       title: '예측 신뢰도',
@@ -54,10 +72,12 @@ function StatisticsCards({ statistics, onMetricClick, date = null }) {
       unit: '개',
       icon: <MdBusiness />,
       color: 'info',
-      change: null,
+      change: isPeriod && statistics.period_days ? `${statistics.period_days}일간 분석` : null,
       trend: 'stable',
       metricType: 'active_spaces',
-      description: '현재 모니터링 중인 문화 공간 수'
+      description: isPeriod
+        ? `${statistics.period_days || 0}일간 모니터링한 문화 공간 수`
+        : '현재 모니터링 중인 문화 공간 수'
     }
   ]
 
