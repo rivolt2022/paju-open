@@ -577,11 +577,86 @@ class MeaningfulMetricsCalculator:
         if content_generator and activation_scores:
             try:
                 llm_evaluation = self._evaluate_activation_scores_with_llm(
-                    space_name, date, activation_scores, content_generator
+                    space_name, date, activation_scores, content_generator, date_metadata, visit_prediction
                 )
                 activation_scores['llm_evaluation'] = llm_evaluation
             except Exception as e:
                 print(f"[지표 계산] LLM 평가 오류: {e}")
+        
+        # 날짜별 특성 정보 추가
+        date_metadata = None
+        try:
+            date_obj = datetime.strptime(date, '%Y-%m-%d')
+            weekday_name = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'][date_obj.weekday()]
+            month = date_obj.month
+            day = date_obj.day
+            is_weekend = date_obj.weekday() >= 5
+            
+            # 공휴일 감지
+            public_holidays = {
+                (1, 1): "신정", (3, 1): "삼일절", (5, 5): "어린이날",
+                (6, 6): "현충일", (8, 15): "광복절", (10, 3): "개천절",
+                (10, 9): "한글날", (12, 25): "크리스마스",
+            }
+            lunar_holidays_approx = {
+                (1, 28): "설날 연휴", (1, 29): "설날 연휴", (1, 30): "설날 연휴",
+                (4, 9): "부처님오신날",
+                (9, 15): "추석 연휴", (9, 16): "추석 연휴", (9, 17): "추석 연휴",
+            }
+            
+            is_public_holiday = False
+            holiday_name = ""
+            if (month, day) in public_holidays:
+                is_public_holiday = True
+                holiday_name = public_holidays[(month, day)]
+            elif (month, day) in lunar_holidays_approx:
+                is_public_holiday = True
+                holiday_name = lunar_holidays_approx[(month, day)]
+            
+            # 계절 판단
+            if month in [12, 1, 2]:
+                season = "겨울"
+            elif month in [3, 4, 5]:
+                season = "봄"
+            elif month in [6, 7, 8]:
+                season = "여름"
+            else:
+                season = "가을"
+            
+            # 날짜 유형 결정
+            if is_public_holiday:
+                date_type = f"공휴일 ({holiday_name})"
+            elif is_weekend:
+                date_type = "주말"
+            else:
+                date_type = "평일"
+            
+            date_metadata = {
+                'date': date,
+                'date_label': date_obj.strftime('%Y년 %m월 %d일'),
+                'weekday': weekday_name,
+                'date_type': date_type,
+                'is_weekend': is_weekend,
+                'is_public_holiday': is_public_holiday,
+                'holiday_name': holiday_name if is_public_holiday else None,
+                'season': season,
+                'month': month,
+                'day': day
+            }
+        except Exception as e:
+            print(f"[지표 계산] 날짜 메타데이터 생성 오류: {e}")
+        
+        # ML 예측 데이터 요약
+        prediction_summary = None
+        if visit_prediction:
+            predicted_visits = visit_prediction.get('predicted_visit', 0)
+            crowd_level = visit_prediction.get('crowd_level', 0)
+            prediction_summary = {
+                'predicted_visits': predicted_visits,
+                'crowd_level': crowd_level,
+                'crowd_level_percentage': crowd_level * 100,
+                'optimal_time': visit_prediction.get('optimal_time', 'N/A')
+            }
         
         metrics = {
             'space_name': space_name,
@@ -589,11 +664,19 @@ class MeaningfulMetricsCalculator:
             'calculated_at': datetime.now().isoformat(),
             'uses_ml_prediction': True,
             
+            # 날짜별 특성 메타데이터
+            'date_metadata': date_metadata,
+            
+            # ML 예측 데이터 요약
+            'prediction_summary': prediction_summary,
+            
             # 활성화 점수 (ML 예측 기반 + LLM 평가)
             'activation_scores': activation_scores,
             
-            # 최적 시간 분석 (ML 예측 데이터 활용)
-            'optimal_time_analysis': self.calculate_optimal_time_analysis(space_name),
+            # 최적 시간 분석 (날짜별 + ML 예측 데이터 활용)
+            'optimal_time_analysis': self._calculate_optimal_time_analysis_with_date(
+                space_name, date, visit_prediction, date_metadata
+            ),
             
             # 타겟팅 점수
             'demographic_targeting': self.calculate_demographic_targeting_score(space_name),
@@ -607,16 +690,14 @@ class MeaningfulMetricsCalculator:
             # 계절별 패턴
             'seasonal_patterns': self.calculate_seasonal_pattern_score(space_name),
             
-            # 프로그램 준비도 (ML 예측 데이터 활용)
-            'program_readiness': {
-                '북토크': self.calculate_cultural_program_readiness_score(space_name, '북토크'),
-                '작가 사인회': self.calculate_cultural_program_readiness_score(space_name, '작가 사인회'),
-                '전시회': self.calculate_cultural_program_readiness_score(space_name, '전시회')
-            },
+            # 프로그램 준비도 (날짜별 + ML 예측 데이터 활용)
+            'program_readiness': self._calculate_program_readiness_with_date(
+                space_name, date, curation_metrics, date_metadata, visit_prediction
+            ),
             
-            # 출판단지 활성화 지수 (LLM 평가 포함)
+            # 출판단지 활성화 지수 (LLM 평가 포함, 날짜별 동적 계산)
             'publishing_complex_vitality': self._calculate_publishing_vitality_with_llm(
-                date, predictor, content_generator
+                date, predictor, content_generator, visit_prediction, activation_scores
             )
         }
         
@@ -630,27 +711,84 @@ class MeaningfulMetricsCalculator:
                                                                   predictor=None,
                                                                   content_generator=None) -> Dict:
         """
-        ML 예측 데이터를 사용하여 활성화 점수 계산
+        ML 예측 데이터를 사용하여 활성화 점수 계산 (날짜별 특성 반영)
         """
         scores = {}
+        
+        # 날짜별 특성 정보 추출
+        date_factor = 1.0  # 날짜별 가중치
+        is_weekend = False
+        is_public_holiday = False
+        season = None
+        
+        if date:
+            try:
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+                is_weekend = date_obj.weekday() >= 5
+                month = date_obj.month
+                day = date_obj.day
+                
+                # 공휴일 감지
+                public_holidays = {
+                    (1, 1): "신정", (3, 1): "삼일절", (5, 5): "어린이날",
+                    (6, 6): "현충일", (8, 15): "광복절", (10, 3): "개천절",
+                    (10, 9): "한글날", (12, 25): "크리스마스",
+                }
+                lunar_holidays_approx = {
+                    (1, 28): "설날 연휴", (1, 29): "설날 연휴", (1, 30): "설날 연휴",
+                    (4, 9): "부처님오신날",
+                    (9, 15): "추석 연휴", (9, 16): "추석 연휴", (9, 17): "추석 연휴",
+                }
+                
+                if (month, day) in public_holidays or (month, day) in lunar_holidays_approx:
+                    is_public_holiday = True
+                    # 공휴일은 방문객 증가로 접근성 점수 증가
+                    date_factor = 1.1
+                elif is_weekend:
+                    # 주말은 방문객 증가로 접근성 점수 증가
+                    date_factor = 1.05
+                else:
+                    # 평일은 기본값
+                    date_factor = 1.0
+                
+                # 계절 판단
+                if month in [12, 1, 2]:
+                    season = "겨울"
+                elif month in [3, 4, 5]:
+                    season = "봄"
+                elif month in [6, 7, 8]:
+                    season = "여름"
+                else:
+                    season = "가을"
+            except Exception as e:
+                print(f"[지표 계산] 날짜 특성 추출 오류: {e}")
         
         # 예측 데이터가 있으면 활용
         if visit_prediction:
             predicted_visits = visit_prediction.get('predicted_visit', 0)
             crowd_level = visit_prediction.get('crowd_level', 0.5)
             
-            # 접근성 점수: 예측 방문인구와 생활인구 비교
-            accessibility_score = self._calculate_accessibility_score_with_prediction(
+            # 접근성 점수: 예측 방문인구와 생활인구 비교 + 날짜별 가중치
+            base_accessibility = self._calculate_accessibility_score_with_prediction(
                 space_name, predicted_visits
             )
+            # 날짜별 특성 반영 (공휴일/주말은 접근성 증가)
+            accessibility_score = min(base_accessibility * date_factor, 100)
             scores['accessibility'] = accessibility_score
             
-            # 활용도 점수: 혼잡도 기반
-            utilization_score = (1 - crowd_level) * 100  # 혼잡도가 낮을수록 높은 점수
-            scores['utilization'] = utilization_score
+            # 활용도 점수: 혼잡도 기반 + 날짜별 특성
+            # 공휴일/주말은 혼잡도가 높아도 활용도가 높을 수 있음 (활성화 기회)
+            if is_public_holiday or is_weekend:
+                # 공휴일/주말은 혼잡도가 높아도 활용도 점수 보정
+                utilization_score = min((1 - crowd_level * 0.8) * 100, 100)
+            else:
+                # 평일은 혼잡도가 낮을수록 높은 점수
+                utilization_score = (1 - crowd_level) * 100
+            scores['utilization'] = max(utilization_score, 0)
         else:
-            # 기본 계산
-            scores['accessibility'] = self._calculate_accessibility_score(space_name)
+            # 기본 계산 + 날짜별 가중치
+            base_accessibility = self._calculate_accessibility_score(space_name)
+            scores['accessibility'] = min(base_accessibility * date_factor, 100)
             scores['utilization'] = self._calculate_utilization_score(space_name)
         
         # 큐레이션 지표가 있으면 활용
@@ -663,14 +801,25 @@ class MeaningfulMetricsCalculator:
             
             if program_scores:
                 interest_score = (sum(program_scores) / len(program_scores)) * 100
+                # 계절별 관심도 보정 (가을/봄은 문화 활동 활발)
+                if season == "가을" or season == "봄":
+                    interest_score = min(interest_score * 1.05, 100)
                 scores['interest'] = min(max(interest_score, 0), 100)
             else:
                 scores['interest'] = self._calculate_interest_score(space_name)
         else:
             scores['interest'] = self._calculate_interest_score(space_name)
         
-        # 잠재력 점수는 기본 계산 사용
-        scores['potential'] = self._calculate_potential_score(space_name)
+        # 잠재력 점수: 기본 계산 + 날짜별 특성 반영
+        base_potential = self._calculate_potential_score(space_name)
+        # 공휴일/주말은 잠재력 증가 (특별 프로그램 기회)
+        if is_public_holiday:
+            potential_score = min(base_potential * 1.1, 100)
+        elif is_weekend:
+            potential_score = min(base_potential * 1.05, 100)
+        else:
+            potential_score = base_potential
+        scores['potential'] = potential_score
         
         # 종합 활성화 점수
         weights = {
@@ -683,7 +832,195 @@ class MeaningfulMetricsCalculator:
         overall_score = sum(scores[key] * weights[key] for key in scores)
         scores['overall'] = overall_score
         
+        # 날짜별 특성 정보 추가
+        scores['date_metadata'] = {
+            'date': date,
+            'is_weekend': is_weekend,
+            'is_public_holiday': is_public_holiday,
+            'season': season,
+            'date_factor_applied': date_factor
+        }
+        
         return scores
+    
+    def _calculate_program_readiness_with_date(self, space_name: str, date: str,
+                                               curation_metrics: Dict = None,
+                                               date_metadata: Dict = None,
+                                               visit_prediction: Dict = None) -> Dict:
+        """
+        날짜별 특성을 반영한 프로그램 준비도 계산
+        """
+        program_readiness = {}
+        
+        # 기본 프로그램 유형
+        program_types = ['북토크', '작가 사인회', '전시회']
+        
+        # 날짜별 특성 추출
+        is_weekend = date_metadata.get('is_weekend', False) if date_metadata else False
+        is_public_holiday = date_metadata.get('is_public_holiday', False) if date_metadata else False
+        season = date_metadata.get('season', None) if date_metadata else None
+        date_type = date_metadata.get('date_type', '평일') if date_metadata else '평일'
+        
+        # 예측 방문인구와 혼잡도
+        predicted_visits = visit_prediction.get('predicted_visit', 0) if visit_prediction else 0
+        crowd_level = visit_prediction.get('crowd_level', 0.5) if visit_prediction else 0.5
+        
+        for program_type in program_types:
+            # 기본 준비도 계산
+            base_readiness = self.calculate_cultural_program_readiness_score(space_name, program_type)
+            base_score = base_readiness.get('readiness_score', 70) / 100.0
+            
+            # 큐레이션 메트릭에서 프로그램별 점수 가져오기
+            curation_score = 0.5  # 기본값
+            if curation_metrics and 'program_metrics' in curation_metrics:
+                program_metrics = curation_metrics['program_metrics'].get(program_type, {})
+                if program_metrics:
+                    curation_score = program_metrics.get('overall_score', 0.5)
+                    if program_metrics.get('recommended', False):
+                        curation_score *= 1.2  # 추천 프로그램이면 가중치 증가
+            
+            # 날짜별 특성 반영
+            date_factor = 1.0
+            
+            # 공휴일/주말은 가족 프로그램 선호
+            if is_public_holiday:
+                if program_type in ['작가 사인회', '전시회']:  # 가족 친화적
+                    date_factor = 1.15
+                elif program_type == '북토크':
+                    date_factor = 1.1
+            elif is_weekend:
+                if program_type in ['작가 사인회', '전시회']:
+                    date_factor = 1.1
+                elif program_type == '북토크':
+                    date_factor = 1.05
+            else:  # 평일
+                if program_type == '북토크':  # 평일 저녁에 적합
+                    date_factor = 1.05
+                else:
+                    date_factor = 0.95  # 평일은 상대적으로 낮음
+            
+            # 계절별 특성 반영
+            season_factor = 1.0
+            if season == "가을":
+                if program_type == '북토크':  # 독서의 계절
+                    season_factor = 1.15
+                elif program_type == '작가 사인회':
+                    season_factor = 1.1
+            elif season == "봄":
+                if program_type == '전시회':  # 봄 전시
+                    season_factor = 1.1
+                elif program_type in ['북토크', '작가 사인회']:
+                    season_factor = 1.05
+            elif season == "겨울":
+                if program_type == '북토크':  # 실내 프로그램
+                    season_factor = 1.1
+                else:
+                    season_factor = 0.95
+            # 여름은 기본값
+            
+            # 예측 방문인구 기반 조정
+            visit_factor = 1.0
+            if predicted_visits > 30000:  # 방문객이 많으면
+                if program_type in ['작가 사인회', '전시회']:  # 대규모 프로그램 적합
+                    visit_factor = 1.1
+            elif predicted_visits < 20000:  # 방문객이 적으면
+                if program_type == '북토크':  # 소규모 프로그램 적합
+                    visit_factor = 1.05
+                else:
+                    visit_factor = 0.95
+            
+            # 혼잡도 기반 조정
+            crowd_factor = 1.0
+            if crowd_level > 0.7:  # 혼잡하면
+                if program_type == '전시회':  # 전시는 혼잡도 영향 적음
+                    crowd_factor = 1.0
+                else:
+                    crowd_factor = 0.9  # 다른 프로그램은 약간 감소
+            elif crowd_level < 0.4:  # 여유롭면
+                crowd_factor = 1.05  # 모든 프로그램에 유리
+            
+            # 종합 점수 계산
+            final_score = (base_score * 0.4 + curation_score * 0.6) * date_factor * season_factor * visit_factor * crowd_factor
+            final_score = min(max(final_score, 0), 1.0) * 100
+            
+            program_readiness[program_type] = {
+                'program_type': program_type,
+                'readiness_score': final_score,
+                'base_score': base_score * 100,
+                'curation_score': curation_score * 100,
+                'date_factor': date_factor,
+                'season_factor': season_factor,
+                'visit_factor': visit_factor,
+                'crowd_factor': crowd_factor,
+                'factors': {
+                    'life_population_support': base_readiness.get('factors', {}).get('life_population_support', 0.75),
+                    'time_availability': base_readiness.get('factors', {}).get('time_availability', 0.80),
+                    'consumer_interest': curation_score,
+                    'facility_suitability': base_readiness.get('factors', {}).get('facility_suitability', 0.65),
+                    'date_suitability': date_factor,
+                    'season_suitability': season_factor
+                },
+                'recommendation': f"{program_type} 운영 준비도 {final_score:.1f}점으로 {'권장' if final_score > 70 else '검토 필요'}",
+                'date_context': f"{date_type} {season}에 {predicted_visits:,.0f}명 예상 방문객 기준"
+            }
+        
+        return program_readiness
+    
+    def _calculate_optimal_time_analysis_with_date(self, space_name: str, date: str,
+                                                   visit_prediction: Dict = None,
+                                                   date_metadata: Dict = None) -> Dict:
+        """
+        날짜별 특성을 반영한 최적 시간 분석
+        """
+        # 기본 최적 시간 분석
+        base_analysis = self.calculate_optimal_time_analysis(space_name)
+        
+        # 날짜별 특성 추출
+        is_weekend = date_metadata.get('is_weekend', False) if date_metadata else False
+        is_public_holiday = date_metadata.get('is_public_holiday', False) if date_metadata else False
+        date_type = date_metadata.get('date_type', '평일') if date_metadata else '평일'
+        season = date_metadata.get('season', None) if date_metadata else None
+        
+        # 예측 데이터에서 최적 시간 추출
+        optimal_time = visit_prediction.get('optimal_time', 'afternoon') if visit_prediction else 'afternoon'
+        
+        # 날짜별 최적 시간대 조정
+        if is_public_holiday:
+            # 공휴일은 오전부터 활발
+            recommended_times = ['morning', 'afternoon']
+            peak_time = 'afternoon'
+        elif is_weekend:
+            # 주말은 오후 집중
+            recommended_times = ['afternoon', 'evening']
+            peak_time = 'afternoon'
+        else:  # 평일
+            # 평일은 저녁 시간대
+            recommended_times = ['evening']
+            peak_time = 'evening'
+        
+        # 계절별 조정
+        if season == "여름":
+            # 여름은 오전/오후 선호 (더위 피함)
+            recommended_times = ['morning', 'afternoon']
+        elif season == "겨울":
+            # 겨울은 오후/저녁 선호
+            if 'morning' in recommended_times:
+                recommended_times.remove('morning')
+            recommended_times.append('evening')
+        
+        # 결과 구성
+        analysis = {
+            **base_analysis,
+            'date': date,
+            'date_type': date_type,
+            'season': season,
+            'optimal_time': optimal_time,
+            'recommended_times': recommended_times,
+            'peak_time': peak_time,
+            'date_specific_recommendation': f"{date_type}에는 {peak_time} 시간대 프로그램 운영이 효과적입니다."
+        }
+        
+        return analysis
     
     def _calculate_accessibility_score_with_prediction(self, space_name: str, predicted_visits: float) -> float:
         """예측 방문인구를 사용한 접근성 점수 계산"""
@@ -711,32 +1048,62 @@ class MeaningfulMetricsCalculator:
             print(f"접근성 점수 계산 오류 (예측 기반): {e}")
             return 60.0
     
-    def _evaluate_activation_scores_with_llm(self, space_name: str, date: str, 
+    def _evaluate_activation_scores_with_llm(self, space_name: str, date: str,
                                              activation_scores: Dict,
-                                             content_generator) -> Dict:
+                                             content_generator,
+                                             date_metadata: Dict = None,
+                                             visit_prediction: Dict = None) -> Dict:
         """
         활성화 점수를 LLM으로 평가
         """
         try:
+            # 날짜별 특성 정보 추출
+            date_label = date_metadata.get('date_label', date) if date_metadata else date
+            date_type = date_metadata.get('date_type', '평일') if date_metadata else '평일'
+            weekday = date_metadata.get('weekday', '') if date_metadata else ''
+            season = date_metadata.get('season', '') if date_metadata else ''
+            is_weekend = date_metadata.get('is_weekend', False) if date_metadata else False
+            is_public_holiday = date_metadata.get('is_public_holiday', False) if date_metadata else False
+            holiday_name = date_metadata.get('holiday_name', '') if date_metadata else ''
+            
+            # 예측 데이터 정보 추출
+            predicted_visits = visit_prediction.get('predicted_visit', 0) if visit_prediction else 0
+            crowd_level = visit_prediction.get('crowd_level', 0) if visit_prediction else 0
+            optimal_time = visit_prediction.get('optimal_time', 'N/A') if visit_prediction else 'N/A'
+            
             prompt = f"""출판단지 활성화 분석 리포트를 작성해주세요.
 
-문화 공간: {space_name}
-날짜: {date}
+**문화 공간**: {space_name}
+**분석 날짜**: {date_label} ({weekday})
+**날짜 유형**: {date_type}
+**계절**: {season}
+{f'**공휴일**: {holiday_name}' if is_public_holiday else ''}
 
-활성화 점수:
+**예측 데이터**:
+- 예상 방문인구: {predicted_visits:,.0f}명
+- 예상 혼잡도: {crowd_level*100:.1f}%
+- 최적 시간대: {optimal_time}
+
+**활성화 점수**:
 - 접근성: {activation_scores.get('accessibility', 0):.1f}점
 - 관심도: {activation_scores.get('interest', 0):.1f}점
 - 잠재력: {activation_scores.get('potential', 0):.1f}점
 - 활용도: {activation_scores.get('utilization', 0):.1f}점
 - 종합: {activation_scores.get('overall', 0):.1f}점
 
+**요구사항**:
+- 날짜별 특성({date_type}, {season})을 반영한 분석
+- 예상 방문인구와 혼잡도를 고려한 평가
+- 해당 날짜에 맞는 구체적인 추천사항 제시
+- 실행 가능한 액션 아이템 제시
+
 다음 형식으로 JSON 응답해주세요:
 {{
-    "summary": "종합 평가 요약",
-    "strengths": ["강점1", "강점2"],
-    "weaknesses": ["약점1", "약점2"],
-    "recommendations": ["추천사항1", "추천사항2"],
-    "action_items": ["액션 아이템1", "액션 아이템2"]
+    "summary": "날짜별 특성을 반영한 종합 평가 요약 (100-150자)",
+    "strengths": ["강점1 (날짜별 특성 반영)", "강점2"],
+    "weaknesses": ["약점1 (날짜별 특성 반영)", "약점2"],
+    "recommendations": ["해당 날짜에 맞는 추천사항1", "추천사항2"],
+    "action_items": ["실행 가능한 액션 아이템1", "액션 아이템2"]
 }}"""
             
             response = content_generator.analyze_data(prompt, return_type='dict')
@@ -783,18 +1150,85 @@ class MeaningfulMetricsCalculator:
         # LLM 평가 추가
         if content_generator and vitality:
             try:
+                # 날짜별 특성 정보 추출
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+                weekday_name = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'][date_obj.weekday()]
+                month = date_obj.month
+                day = date_obj.day
+                is_weekend = date_obj.weekday() >= 5
+                
+                # 공휴일 감지
+                public_holidays = {
+                    (1, 1): "신정", (3, 1): "삼일절", (5, 5): "어린이날",
+                    (6, 6): "현충일", (8, 15): "광복절", (10, 3): "개천절",
+                    (10, 9): "한글날", (12, 25): "크리스마스",
+                }
+                lunar_holidays_approx = {
+                    (1, 28): "설날 연휴", (1, 29): "설날 연휴", (1, 30): "설날 연휴",
+                    (4, 9): "부처님오신날",
+                    (9, 15): "추석 연휴", (9, 16): "추석 연휴", (9, 17): "추석 연휴",
+                }
+                
+                is_public_holiday = False
+                holiday_name = ""
+                if (month, day) in public_holidays:
+                    is_public_holiday = True
+                    holiday_name = public_holidays[(month, day)]
+                elif (month, day) in lunar_holidays_approx:
+                    is_public_holiday = True
+                    holiday_name = lunar_holidays_approx[(month, day)]
+                
+                # 계절 판단
+                if month in [12, 1, 2]:
+                    season = "겨울"
+                elif month in [3, 4, 5]:
+                    season = "봄"
+                elif month in [6, 7, 8]:
+                    season = "여름"
+                else:
+                    season = "가을"
+                
+                # 날짜 유형 결정
+                if is_public_holiday:
+                    date_type = f"공휴일 ({holiday_name})"
+                elif is_weekend:
+                    date_type = "주말"
+                else:
+                    date_type = "평일"
+                
+                # 예측 데이터 정보
+                predicted_visits = visit_prediction.get('predicted_visit', 0) if visit_prediction else 0
+                crowd_level = visit_prediction.get('crowd_level', 0) if visit_prediction else 0
+                activation_overall = activation_scores.get('overall', 0) if activation_scores else 0
+                
                 prompt = f"""출판단지 활성화 지수를 분석해주세요.
 
-날짜: {date}
-활성화 지수: {vitality.get('overall_publishing_complex_vitality', 0):.2f}
-트렌드: {vitality.get('trend', 'N/A')}
+**분석 날짜**: {date_obj.strftime('%Y년 %m월 %d일')} ({weekday_name})
+**날짜 유형**: {date_type}
+**계절**: {season}
+{f'**공휴일**: {holiday_name}' if is_public_holiday else ''}
+
+**예측 데이터**:
+- 예상 방문인구: {predicted_visits:,.0f}명
+- 예상 혼잡도: {crowd_level*100:.1f}%
+- 문화 공간 활성화 점수: {activation_overall:.1f}점
+
+**출판단지 활성화 지수**:
+- 활성화 지수: {vitality.get('overall_publishing_complex_vitality', 0):.2f}
+- 트렌드: {vitality.get('trend', 'N/A')}
+- 권고사항: {vitality.get('recommendation', 'N/A')}
+
+**요구사항**:
+- 날짜별 특성({date_type}, {season})을 반영한 평가
+- 예상 방문인구와 활성화 점수를 고려한 해석
+- 해당 날짜에 맞는 인사이트와 제안 제시
 
 다음 형식으로 JSON 응답해주세요:
 {{
-    "evaluation": "활성화 지수 평가",
-    "interpretation": "지수 해석",
-    "insights": ["인사이트1", "인사이트2"],
-    "suggestions": ["제안1", "제안2"]
+    "evaluation": "날짜별 특성을 반영한 활성화 지수 평가 (100-150자)",
+    "interpretation": "예상 방문인구와 활성화 점수를 고려한 지수 해석 (100-200자)",
+    "insights": ["날짜별 특성 반영 인사이트1", "인사이트2"],
+    "suggestions": ["해당 날짜에 맞는 제안1", "제안2"]
 }}"""
                 
                 response = content_generator.analyze_data(prompt, return_type='dict')

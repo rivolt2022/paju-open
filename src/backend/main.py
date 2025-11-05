@@ -766,13 +766,82 @@ async def get_model_metrics():
 
 @app.get("/api/analytics/meaningful-metrics")
 async def get_meaningful_metrics(space_name: str = "헤이리예술마을", date: str = None):
-    """출판단지 활성화를 위한 유의미한 ML 지표 조회"""
+    """출판단지 활성화를 위한 유의미한 ML 지표 조회 (날짜별 동적 계산)"""
     try:
         if meaningful_metrics_service is None:
             raise HTTPException(status_code=503, detail="의미 있는 지표 서비스가 초기화되지 않았습니다.")
         
         # 종합 지표 계산 (날짜가 있으면 해당 날짜 기준으로)
         comprehensive_metrics = meaningful_metrics_service.get_comprehensive_metrics(space_name, date=date)
+        
+        # 날짜별 특성 정보 추가 (날짜가 제공된 경우)
+        if date:
+            try:
+                from datetime import datetime
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+                weekday_name = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'][date_obj.weekday()]
+                month = date_obj.month
+                day = date_obj.day
+                
+                # 주말/평일 판단
+                is_weekend = date_obj.weekday() >= 5
+                
+                # 공휴일 감지
+                public_holidays = {
+                    (1, 1): "신정", (3, 1): "삼일절", (5, 5): "어린이날",
+                    (6, 6): "현충일", (8, 15): "광복절", (10, 3): "개천절",
+                    (10, 9): "한글날", (12, 25): "크리스마스",
+                }
+                lunar_holidays_approx = {
+                    (1, 28): "설날 연휴", (1, 29): "설날 연휴", (1, 30): "설날 연휴",
+                    (4, 9): "부처님오신날",
+                    (9, 15): "추석 연휴", (9, 16): "추석 연휴", (9, 17): "추석 연휴",
+                }
+                
+                is_public_holiday = False
+                holiday_name = ""
+                if (month, day) in public_holidays:
+                    is_public_holiday = True
+                    holiday_name = public_holidays[(month, day)]
+                elif (month, day) in lunar_holidays_approx:
+                    is_public_holiday = True
+                    holiday_name = lunar_holidays_approx[(month, day)]
+                
+                # 계절 판단
+                if month in [12, 1, 2]:
+                    season = "겨울"
+                elif month in [3, 4, 5]:
+                    season = "봄"
+                elif month in [6, 7, 8]:
+                    season = "여름"
+                else:
+                    season = "가을"
+                
+                # 날짜 유형 결정
+                if is_public_holiday:
+                    date_type = f"공휴일 ({holiday_name})"
+                elif is_weekend:
+                    date_type = "주말"
+                else:
+                    date_type = "평일"
+                
+                # 날짜별 특성 메타데이터 추가
+                comprehensive_metrics['date_metadata'] = {
+                    'date': date,
+                    'date_label': date_obj.strftime('%Y년 %m월 %d일'),
+                    'weekday': weekday_name,
+                    'date_type': date_type,
+                    'is_weekend': is_weekend,
+                    'is_public_holiday': is_public_holiday,
+                    'holiday_name': holiday_name if is_public_holiday else None,
+                    'season': season,
+                    'month': month,
+                    'day': day
+                }
+                
+                print(f"[API] 날짜별 특성 메타데이터 추가: {date_type}, {season}, {weekday_name}")
+            except Exception as e:
+                print(f"[API] 날짜별 특성 정보 생성 오류: {e}")
         
         return comprehensive_metrics
         
@@ -1095,41 +1164,118 @@ async def get_action_items(request: Dict):
         # 날짜 레이블 생성
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         date_label = date_obj.strftime('%Y년 %m월 %d일')
+        weekday_name = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'][date_obj.weekday()]
+        month = date_obj.month
+        day = date_obj.day
         
         # 주말/평일 패턴 분석
         is_weekend = date_obj.weekday() >= 5
-        weekend_info = f"주말" if is_weekend else "평일"
+        
+        # 공휴일 감지 (2024-2025 주요 공휴일)
+        public_holidays = {
+            (1, 1): "신정",
+            (3, 1): "삼일절",
+            (5, 5): "어린이날",
+            (6, 6): "현충일",
+            (8, 15): "광복절",
+            (10, 3): "개천절",
+            (10, 9): "한글날",
+            (12, 25): "크리스마스",
+        }
+        
+        # 음력 공휴일 대략적 계산 (2024-2025)
+        lunar_holidays_approx = {
+            (1, 28): "설날 연휴",
+            (1, 29): "설날 연휴",
+            (1, 30): "설날 연휴",
+            (4, 9): "부처님오신날",
+            (9, 15): "추석 연휴",
+            (9, 16): "추석 연휴",
+            (9, 17): "추석 연휴",
+        }
+        
+        is_public_holiday = False
+        holiday_name = ""
+        if (month, day) in public_holidays:
+            is_public_holiday = True
+            holiday_name = public_holidays[(month, day)]
+        elif (month, day) in lunar_holidays_approx:
+            is_public_holiday = True
+            holiday_name = lunar_holidays_approx[(month, day)]
+        
+        # 계절 판단
+        if month in [12, 1, 2]:
+            season = "겨울"
+            season_context = "겨울철은 실내 프로그램이 효과적이며, 따뜻한 공간에서의 독서나 문화 활동이 선호됩니다."
+        elif month in [3, 4, 5]:
+            season = "봄"
+            season_context = "봄철은 야외 활동이 증가하며, 꽃놀이와 연계한 프로그램이나 야외 독서 공간 활용이 좋습니다."
+        elif month in [6, 7, 8]:
+            season = "여름"
+            season_context = "여름철은 휴가 시즌으로 가족 단위 방문이 많으며, 실내 프로그램과 시원한 공간 활용이 중요합니다."
+        else:
+            season = "가을"
+            season_context = "가을철은 문화 활동이 활발하며, 독서의 계절로 책 관련 프로그램이 매우 효과적입니다."
+        
+        # 날짜 유형 결정
+        date_type = ""
+        if is_public_holiday:
+            date_type = f"공휴일 ({holiday_name})"
+        elif is_weekend:
+            date_type = "주말"
+        else:
+            date_type = "평일"
         
         # 통계에서 추가 정보 추출
         active_spaces = statistics.get('active_spaces', 0)
         avg_daily_visits = statistics.get('avg_daily_visits', 0)
         
-        # 주말/평일 패턴 분석 강화
-        weekend_context = ""
-        if is_weekend:
-            weekend_context = """
+        # 날짜별 컨텍스트 생성 (주말/공휴일/평일 + 계절)
+        date_context = f"""
+**날짜 특성 분석**:
+- 날짜: {date_label} ({weekday_name})
+- 날짜 유형: {date_type}
+- 계절: {season}
+{season_context}
+
+"""
+        
+        if is_public_holiday:
+            date_context += f"""
+**공휴일 패턴 분석** ({holiday_name}):
+- 공휴일은 평일보다 방문객이 1.5-2배 많습니다
+- 가족 단위 방문이 많아 가족 프로그램이 매우 효과적입니다
+- 특별 이벤트나 기념 프로그램 운영이 좋은 기회입니다
+- 공휴일 특성에 맞는 테마 프로그램 기획이 중요합니다
+- 연휴의 경우 첫날과 마지막날 방문 패턴이 다릅니다
+"""
+        elif is_weekend:
+            date_context += f"""
 **주말 패턴 분석**:
-- 이 날짜는 주말(토요일 또는 일요일)입니다
-- 일반적으로 주말에는 평일보다 방문객이 1.4-1.5배 많습니다
+- 주말은 평일보다 방문객이 1.4-1.5배 많습니다
 - 주말 방문객은 가족 단위, 여가 활동 중심으로 문화 프로그램 참여율이 높습니다
 - 주말 특별 프로그램이나 이벤트 운영이 매우 효과적입니다
+- 토요일은 가족 단위, 일요일은 개인 취미 활동 중심 패턴이 있습니다
+- 주말 오후 시간대(14:00-18:00) 프로그램이 가장 효과적입니다
 """
         else:
-            weekend_context = """
+            date_context += f"""
 **평일 패턴 분석**:
-- 이 날짜는 평일(월~금)입니다
 - 평일 방문객은 업무 후 방문 또는 개인 취미 활동 중심입니다
 - 저녁 시간대(18:00-20:00) 프로그램 운영이 효과적입니다
 - 평일은 주말보다 방문객이 상대적으로 적지만, 충성도 높은 방문객이 많습니다
+- 평일 오후(15:00-17:00) 시간대도 은퇴층이나 자유 시간이 있는 방문객이 많습니다
+- 평일 특화 프로그램(예: 평일 할인, 평일 특별 이벤트)으로 방문 유도 가능합니다
 """
         
         # 액션 아이템 생성 프롬프트 (다채롭고 다양하게)
         prompt = f"""당신은 파주시 출판단지 활성화를 위한 창의적인 AI 전략 어시스턴트입니다.
-분석된 데이터를 바탕으로 **다양하고 창의적인** 활성화 액션 아이템을 제시해주세요.
+분석된 데이터를 바탕으로 **다양하고 창의적이며 풍부한** 활성화 액션 아이템을 제시해주세요.
 
-**분석 기준 날짜**: {date_label} ({date})
-**날짜 유형**: {weekend_info} ({"주말" if is_weekend else "평일"})
-{weekend_context}
+**분석 기준 날짜**: {date_label} ({date}, {weekday_name})
+**날짜 유형**: {date_type}
+**계절**: {season}
+{date_context}
 
 **현재 상황**:
 - 전체 예상 방문자: {total_visits:,}명
@@ -1140,28 +1286,41 @@ async def get_action_items(request: Dict):
 **문화 공간별 예측 상세 (큐레이션 메트릭 포함)**:
 {''.join(space_details)}
 
-**액션 아이템 카테고리 (다양하게 활용하세요)**:
-1. **프로그램 기획**: 특별 이벤트, 워크숍, 강연, 체험 프로그램
-2. **마케팅/홍보**: SNS 캠페인, 협업 이벤트, 인플루언서 초청, 지역 매체 활용
-3. **운영/서비스**: 인력 배치, 대기 공간, 편의 시설, 안내 서비스
-4. **파트너십/협업**: 지역 업체 협업, 작가/아티스트 초청, 출판사 연계
-5. **공간 활용**: 야외 공간 활용, 팝업 스토어, 전시, 라이브 공연
-6. **콘텐츠 제작**: 독서 모임, 출판 토크, 작가 사인회, 북 커버 아트 전시
-7. **디지털/온라인**: 온라인 이벤트, 라이브 스트리밍, 가상 투어, 예약 시스템
-8. **커뮤니티**: 지역 주민 연계, 자원봉사, 클럽 활동, 네트워킹
+**액션 아이템 카테고리 (다양하게 활용하세요 - 최소 6개 이상 카테고리 사용)**:
+1. **프로그램 기획**: 특별 이벤트, 워크숍, 강연, 체험 프로그램, 시즌 테마 프로그램
+2. **마케팅/홍보**: SNS 캠페인, 협업 이벤트, 인플루언서 초청, 지역 매체 활용, 바이럴 마케팅
+3. **운영/서비스**: 인력 배치, 대기 공간, 편의 시설, 안내 서비스, 고객 경험 개선
+4. **파트너십/협업**: 지역 업체 협업, 작가/아티스트 초청, 출판사 연계, 문화 기관 협업
+5. **공간 활용**: 야외 공간 활용, 팝업 스토어, 전시, 라이브 공연, 계절별 공간 연출
+6. **콘텐츠 제작**: 독서 모임, 출판 토크, 작가 사인회, 북 커버 아트 전시, 출판 문화 콘텐츠
+7. **디지털/온라인**: 온라인 이벤트, 라이브 스트리밍, 가상 투어, 예약 시스템, 디지털 아카이브
+8. **커뮤니티**: 지역 주민 연계, 자원봉사, 클럽 활동, 네트워킹, 독서 모임
+9. **시즌/테마**: {season} 테마 프로그램, 날짜별 특별 테마, 공휴일 기념 프로그램
+10. **혼잡도 관리**: 방문객 분산 전략, 시간대별 프로그램, 예약 시스템, 대체 공간 활용
+11. **타겟 고객**: 가족/개인/커플/단체별 맞춤 프로그램, 연령대별 특화 이벤트
+12. **문화 융합**: 음악+책, 미술+책, 요리+책, 영화+책 등 융합 프로그램
 
 **요구사항**:
-1. **다양성**: 위 카테고리 중 최소 5개 이상의 서로 다른 카테고리를 활용하세요
-2. **창의성**: 뻔한 제안이 아닌, 독특하고 참신한 아이디어를 제시하세요
-3. **구체성**: 추상적인 제안이 아닌, 구체적인 실행 방법과 대상을 명시하세요
+1. **다양성**: 위 카테고리 중 최소 6개 이상의 서로 다른 카테고리를 활용하세요 (10-12개 액션 아이템 생성)
+2. **창의성**: 뻔한 제안이 아닌, 독특하고 참신하며 실용적인 아이디어를 제시하세요
+3. **구체성**: 추상적인 제안이 아닌, 구체적인 실행 방법, 대상, 시간, 장소를 명시하세요
 4. **실행 가능성**: 당장 실행 가능한 (오늘~이번 주) 액션 위주로, 중장기(이번 달 이상)는 최소화
-5. **{weekend_info} 특성 반영**: 날짜 유형에 맞는 프로그램과 타겟 고객을 고려하세요
-6. **혼잡도 고려**: 혼잡도 수준에 따라 다른 전략 제시 (높으면 분산, 낮으면 집중 유도)
-7. **공간별 특성**: 각 문화 공간의 특성에 맞는 맞춤형 액션 제시
+5. **날짜 특성 반영**: {date_type} 특성을 반드시 반영하세요
+   - 공휴일: 가족 단위 프로그램, 특별 이벤트, 기념 프로그램
+   - 주말: 가족/여가 프로그램, 오후 집중 프로그램, 특별 이벤트
+   - 평일: 저녁 프로그램, 개인 취미 프로그램, 평일 특화 이벤트
+6. **계절 특성 반영**: {season} 계절 특성을 반영하세요 ({season_context})
+7. **혼잡도 고려**: 혼잡도 수준({avg_crowd:.1f}%)에 따라 다른 전략 제시
+   - 높은 혼잡도(60% 이상): 분산 전략, 예약 시스템, 대체 공간 활용
+   - 보통 혼잡도(40-60%): 집중 유도, 특별 프로그램으로 방문 증가
+   - 낮은 혼잡도(40% 미만): 적극적 마케팅, 특별 이벤트로 방문 유도
+8. **공간별 특성**: 각 문화 공간의 특성에 맞는 맞춤형 액션 제시
+9. **타겟 고객 다양화**: 가족, 개인, 커플, 단체, 연령대별 다양한 타겟 고려
+10. **풍부한 아이디어**: 각 액션 아이템이 서로 다른 접근 방식과 효과를 가져야 합니다
 
 **각 액션 아이템 형식**:
 - **제목**: 독특하고 임팩트 있는 이름 (15자 이내, 🎨📚🎭🌿 등의 이모지 가능)
-- **설명**: 구체적인 실행 방법, 대상, 기대 효과 (60-80자)
+- **설명**: 구체적인 실행 방법, 대상, 시간, 장소, 기대 효과를 상세히 설명 (80-120자)
 - **우선순위**: High/Medium/Low (실행 시급성과 효과 기반)
 - **담당부서**: 다양한 부서 제시 (프로그램 기획팀, 마케팅팀, 운영팀, 큐레이션팀, 파트너십팀, 디지털팀, 커뮤니티팀 등)
 - **실행 시기**: 오늘/내일/이번 주/이번 달
@@ -1179,7 +1338,7 @@ async def get_action_items(request: Dict):
     {{
       "id": 1,
       "title": "창의적이고 독특한 액션 제목",
-      "description": "구체적인 실행 방법, 대상, 기대 효과를 상세히 설명 (60-80자)",
+      "description": "구체적인 실행 방법, 대상, 시간, 장소, 기대 효과를 상세히 설명 (80-120자)",
       "priority": "High",
       "department": "다양한 부서명",
       "timeline": "오늘",
@@ -1190,25 +1349,34 @@ async def get_action_items(request: Dict):
   ]
 }}
 
-**액션 아이템 생성 예시 (참고용)**:
-- "주말 한정 북 커피 콜라보": 헤이리예술마을 카페와 연계한 독서 공간 팝업 운영
-- "작가와의 라이브 토크쇼": 예상 방문자 수가 많은 시간대에 SNS 라이브 스트리밍
-- "출판단지 나이트 투어": 저녁 시간대 특별 프로그램으로 평일 방문자 유도
-- "지역 인플루언서 초청 이벤트": 파주 출판 문화를 소개하는 콘텐츠 제작 협업
-- "팝업 북스토어 운영": 혼잡도가 낮은 공간에 임시 서점 운영으로 방문자 분산
-- "디지털 북커버 전시": 온라인과 오프라인 연계 전시로 트래픽 유도
+**액션 아이템 생성 예시 (참고용 - 날짜별 특성 반영)**:
+- "{date_type} 한정 북 커피 콜라보": 헤이리예술마을 카페와 연계한 독서 공간 팝업 운영 ({season} 테마 음료 제공)
+- "작가와의 라이브 토크쇼": 예상 방문자 수가 많은 시간대에 SNS 라이브 스트리밍 (실시간 Q&A)
+- "출판단지 나이트 투어": 저녁 시간대 특별 프로그램으로 평일 방문자 유도 (조명 연출 포함)
+- "지역 인플루언서 초청 이벤트": 파주 출판 문화를 소개하는 콘텐츠 제작 협업 (SNS 홍보 연계)
+- "팝업 북스토어 운영": 혼잡도가 낮은 공간에 임시 서점 운영으로 방문자 분산 ({season} 추천 도서 코너)
+- "디지털 북커버 전시": 온라인과 오프라인 연계 전시로 트래픽 유도 (AR 체험 포함)
+- "{holiday_name if is_public_holiday else season} 특별 프로그램": 날짜 특성에 맞는 테마 프로그램 운영
+- "가족 단위 독서 체험": {date_type}에 맞는 가족 프로그램 (부모-자녀 독서 활동)
+- "저녁 시간대 문화 프로그램": 평일 방문객을 위한 18:00-20:00 특별 프로그램
+- "야외 독서 공간 연출": {season} 계절에 맞는 야외 공간 활용 프로그램
 
 **중요**:
-- 최소 7-10개의 다양한 액션 아이템을 생성하세요
+- 최소 10-12개의 다양한 액션 아이템을 생성하세요 (다양성과 풍부함을 위해)
 - 각 액션은 서로 다른 카테고리와 접근 방식이어야 합니다
-- {weekend_info} 특성과 예상 방문자 수, 혼잡도를 종합적으로 고려하세요
-- 뻔한 제안보다는 창의적이고 독특한 아이디어를 우선하세요
+- {date_type} 특성, {season} 계절 특성, 예상 방문자 수, 혼잡도를 종합적으로 고려하세요
+- 뻔한 제안보다는 창의적이고 독특하며 실용적인 아이디어를 우선하세요
+- 날짜별 특성({date_type}, {season})을 반드시 반영하여 맞춤형 액션을 제시하세요
+- 공휴일인 경우 가족 단위 프로그램과 특별 이벤트를 포함하세요
+- 주말인 경우 오후 시간대 집중 프로그램과 가족/여가 프로그램을 포함하세요
+- 평일인 경우 저녁 시간대 프로그램과 개인 취미 프로그램을 포함하세요
+- 각 액션 아이템의 설명은 구체적이고 실행 가능하도록 상세히 작성하세요 (60-100자)
 
 응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
 """
         
         # LLM 호출
-        print(f"[API] 액션 아이템 생성 - LLM 호출 시작 (날짜: {date}, {weekend_info})")
+        print(f"[API] 액션 아이템 생성 - LLM 호출 시작 (날짜: {date}, {date_type}, {season})")
         print(f"[API] 프롬프트 길이: {len(prompt)} 문자")
         
         if content_generator is None:
