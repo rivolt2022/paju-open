@@ -1052,9 +1052,9 @@ async def get_action_items(request: Dict):
 - 평일은 주말보다 방문객이 상대적으로 적지만, 충성도 높은 방문객이 많습니다
 """
         
-        # 액션 아이템 생성 프롬프트
-        prompt = f"""당신은 파주시 출판단지 활성화를 위한 AI 전략 어시스턴트입니다.
-분석된 데이터를 바탕으로 **당장 실행 가능한** 활성화 액션 아이템을 제시해주세요.
+        # 액션 아이템 생성 프롬프트 (다채롭고 다양하게)
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 창의적인 AI 전략 어시스턴트입니다.
+분석된 데이터를 바탕으로 **다양하고 창의적인** 활성화 액션 아이템을 제시해주세요.
 
 **분석 기준 날짜**: {date_label} ({date})
 **날짜 유형**: {weekend_info} ({"주말" if is_weekend else "평일"})
@@ -1063,52 +1063,75 @@ async def get_action_items(request: Dict):
 **현재 상황**:
 - 전체 예상 방문자: {total_visits:,}명
 - 평균 일일 방문자: {avg_daily_visits:.0f}명
-- 평균 혼잡도: {avg_crowd:.1f}%
+- 평균 혼잡도: {avg_crowd:.1f}% ({'높은' if avg_crowd > 60 else '보통' if avg_crowd > 40 else '낮은'} 수준)
 - 활성 문화 공간 수: {active_spaces}개
-- ML 모델 정확도: {model_accuracy:.1f}%
-- 평균 예측 오차: {mae:.0f}명
 
 **문화 공간별 예측 상세 (큐레이션 메트릭 포함)**:
 {''.join(space_details)}
 
+**액션 아이템 카테고리 (다양하게 활용하세요)**:
+1. **프로그램 기획**: 특별 이벤트, 워크숍, 강연, 체험 프로그램
+2. **마케팅/홍보**: SNS 캠페인, 협업 이벤트, 인플루언서 초청, 지역 매체 활용
+3. **운영/서비스**: 인력 배치, 대기 공간, 편의 시설, 안내 서비스
+4. **파트너십/협업**: 지역 업체 협업, 작가/아티스트 초청, 출판사 연계
+5. **공간 활용**: 야외 공간 활용, 팝업 스토어, 전시, 라이브 공연
+6. **콘텐츠 제작**: 독서 모임, 출판 토크, 작가 사인회, 북 커버 아트 전시
+7. **디지털/온라인**: 온라인 이벤트, 라이브 스트리밍, 가상 투어, 예약 시스템
+8. **커뮤니티**: 지역 주민 연계, 자원봉사, 클럽 활동, 네트워킹
+
 **요구사항**:
-1. **당장 실행 가능한** 구체적인 액션 아이템만 제시하세요 (오늘 또는 이번 주 내 실행 가능)
-2. 출판단지 활성화와 직접 연관된 실질적인 전략이어야 합니다
-3. **{weekend_info} 패턴을 반드시 고려하세요**: 주말이면 주말 특화 프로그램/이벤트를, 평일이면 평일 시간대에 맞는 프로그램을 제안하세요
-4. 큐레이션 메트릭에서 추천된 프로그램 타입을 활용하여 구체적인 액션 아이템을 제시하세요
-5. 각 액션은 다음 형식으로 작성해주세요:
-   - 제목: 간결하고 명확한 액션명 (15자 이내)
-   - 설명: 실행 방법과 기대 효과 (50자 이내)
-   - 우선순위: High/Medium/Low
-   - 담당부서/역할: 누가 실행할 수 있는지
-   - 실행 시기: 오늘/이번 주/이번 달
-6. 액션 아이템은 5-7개 정도로 제한하세요
+1. **다양성**: 위 카테고리 중 최소 5개 이상의 서로 다른 카테고리를 활용하세요
+2. **창의성**: 뻔한 제안이 아닌, 독특하고 참신한 아이디어를 제시하세요
+3. **구체성**: 추상적인 제안이 아닌, 구체적인 실행 방법과 대상을 명시하세요
+4. **실행 가능성**: 당장 실행 가능한 (오늘~이번 주) 액션 위주로, 중장기(이번 달 이상)는 최소화
+5. **{weekend_info} 특성 반영**: 날짜 유형에 맞는 프로그램과 타겟 고객을 고려하세요
+6. **혼잡도 고려**: 혼잡도 수준에 따라 다른 전략 제시 (높으면 분산, 낮으면 집중 유도)
+7. **공간별 특성**: 각 문화 공간의 특성에 맞는 맞춤형 액션 제시
+
+**각 액션 아이템 형식**:
+- **제목**: 독특하고 임팩트 있는 이름 (15자 이내, 🎨📚🎭🌿 등의 이모지 가능)
+- **설명**: 구체적인 실행 방법, 대상, 기대 효과 (60-80자)
+- **우선순위**: High/Medium/Low (실행 시급성과 효과 기반)
+- **담당부서**: 다양한 부서 제시 (프로그램 기획팀, 마케팅팀, 운영팀, 큐레이션팀, 파트너십팀, 디지털팀, 커뮤니티팀 등)
+- **실행 시기**: 오늘/내일/이번 주/이번 달
+- **아이콘**: 다양한 이모지 사용 (🎯🎨📢👥📚🎭🌿✨💡🎪🎵🖼️📸🎬🔔 등)
+- **영향력**: 높음/중간/낮음 (기대 효과)
+
+**우선순위 기준**:
+- **High**: 즉시 실행 시 큰 효과 (예: 오늘 당장 실행 가능한 이벤트, 긴급 마케팅)
+- **Medium**: 단기간 내 실행 가능한 전략 (예: 이번 주 프로그램 기획, 협업 준비)
+- **Low**: 중장기 전략 (예: 시설 개선, 장기 프로그램 계획)
 
 **응답 형식** (JSON):
 {{
   "action_items": [
     {{
       "id": 1,
-      "title": "액션 제목",
-      "description": "구체적인 실행 방법과 기대 효과",
+      "title": "창의적이고 독특한 액션 제목",
+      "description": "구체적인 실행 방법, 대상, 기대 효과를 상세히 설명 (60-80자)",
       "priority": "High",
-      "department": "프로그램 기획팀",
+      "department": "다양한 부서명",
       "timeline": "오늘",
-      "icon": "🎯",
+      "icon": "🎨",
       "impact": "높음"
     }},
     ...
   ]
 }}
 
-각 액션 아이템은 다음 기준으로 우선순위를 정하세요:
-- **High**: 즉시 실행하면 큰 효과를 볼 수 있는 항목 ({"주말 특별 프로그램, 가족 단위 이벤트" if is_weekend else "평일 저녁 시간대 프로그램, 업무 후 문화 활동"})
-- **Medium**: 단기간 내 실행 가능한 전략적 항목 (프로그램 시간 조정, 마케팅 강화 등)
-- **Low**: 중장기적으로 고려할 항목 (시설 개선, 장기 프로그램 등)
+**액션 아이템 생성 예시 (참고용)**:
+- "주말 한정 북 커피 콜라보": 헤이리예술마을 카페와 연계한 독서 공간 팝업 운영
+- "작가와의 라이브 토크쇼": 예상 방문자 수가 많은 시간대에 SNS 라이브 스트리밍
+- "출판단지 나이트 투어": 저녁 시간대 특별 프로그램으로 평일 방문자 유도
+- "지역 인플루언서 초청 이벤트": 파주 출판 문화를 소개하는 콘텐츠 제작 협업
+- "팝업 북스토어 운영": 혼잡도가 낮은 공간에 임시 서점 운영으로 방문자 분산
+- "디지털 북커버 전시": 온라인과 오프라인 연계 전시로 트래픽 유도
 
-**중요**: {weekend_info} 특성을 반영하여 액션 아이템을 생성하세요. 예를 들어:
-- 주말이면: 가족 단위 프로그램, 주말 특별 이벤트, 야외 활동 등
-- 평일이면: 저녁 시간대 프로그램, 업무 후 문화 활동, 개인 취미 프로그램 등
+**중요**:
+- 최소 7-10개의 다양한 액션 아이템을 생성하세요
+- 각 액션은 서로 다른 카테고리와 접근 방식이어야 합니다
+- {weekend_info} 특성과 예상 방문자 수, 혼잡도를 종합적으로 고려하세요
+- 뻔한 제안보다는 창의적이고 독특한 아이디어를 우선하세요
 
 응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
 """
@@ -1254,6 +1277,169 @@ async def get_action_items(request: Dict):
                     "timeline": "오늘",
                     "icon": "📢",
                     "impact": "높음"
+                }
+            ]
+        }
+
+@app.post("/api/analytics/key-insights")
+async def get_key_insights(request: Dict):
+    """LLM 기반 핵심 인사이트 요약 생성"""
+    try:
+        predictions = request.get('predictions', [])
+        statistics = request.get('statistics', {})
+        trend_data = request.get('trend_data', {})
+        date = request.get('date', datetime.now().strftime('%Y-%m-%d'))
+        
+        # 통계 요약 생성
+        total_visits = statistics.get('total_visits', 0)
+        avg_crowd = statistics.get('avg_crowd_level', 0) * 100
+        active_spaces = statistics.get('active_spaces', 0)
+        
+        # 날짜 레이블 생성
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_label = date_obj.strftime('%Y년 %m월 %d일')
+        is_weekend = date_obj.weekday() >= 5
+        weekday_name = date_obj.strftime('%A')
+        weekday_kr = {'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일', 
+                      'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일'}.get(weekday_name, '')
+        
+        # 예측 데이터 요약
+        predictions_list = []
+        if isinstance(predictions, list):
+            predictions_list = predictions
+        elif isinstance(predictions, dict) and 'predictions' in predictions:
+            predictions_list = predictions['predictions']
+        
+        # 상위 3개 공간 추출
+        top_spaces = sorted(predictions_list, key=lambda x: x.get('predicted_visit', 0), reverse=True)[:3]
+        
+        # 트렌드 데이터 요약
+        trend_summary = ""
+        if trend_data:
+            trend_summary = f"""
+**트렌드 데이터**:
+- 트렌드 정보: {json.dumps(trend_data, ensure_ascii=False, indent=2)[:500]}
+"""
+        
+        # 핵심 인사이트 생성 프롬프트
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 데이터 분석 전문가입니다.
+분석된 데이터를 바탕으로 **오늘 하루를 이해하는 핵심 인사이트**를 3-5개 카드 형태로 요약해주세요.
+
+**분석 기준 날짜**: {date_label} ({weekday_kr}, {"주말" if is_weekend else "평일"})
+
+**현재 상황 요약**:
+- 전체 예상 방문자: {total_visits:,}명
+- 평균 혼잡도: {avg_crowd:.1f}%
+- 활성 문화 공간 수: {active_spaces}개
+
+**상위 문화 공간 예측**:
+{chr(10).join([f"- {space.get('space', 'N/A')}: 예상 방문 {space.get('predicted_visit', 0):,}명, 혼잡도 {space.get('crowd_level', 0)*100:.1f}%" for space in top_spaces[:3]])}
+
+{trend_summary}
+
+**요구사항**:
+1. **핵심 인사이트 3-5개**를 카드 형태로 제시하세요
+2. 각 인사이트는 다음 형식으로 작성:
+   - 제목: 핵심 내용을 한눈에 파악할 수 있는 제목 (10-15자)
+   - 설명: 구체적인 데이터와 근거를 포함한 설명 (40-60자)
+   - 아이콘: 이모지 아이콘 (예: 📊, 🎯, ⚠️, 📈, 💡)
+   - 타입: insight/warning/opportunity/recommendation 중 하나
+3. **출판단지 큐레이터가 하루를 시작하기 전에 알아야 할 정보** 중심으로 작성
+4. 데이터 근거를 명확히 제시하세요
+5. 초등학생도 이해할 수 있게 쉽게 설명하세요
+
+**응답 형식** (JSON):
+{{
+  "insights": [
+    {{
+      "id": 1,
+      "title": "인사이트 제목",
+      "description": "구체적인 데이터와 근거를 포함한 설명",
+      "icon": "📊",
+      "type": "insight",
+      "value": "주요 수치나 값",
+      "trend": "up/down/stable"
+    }},
+    ...
+  ]
+}}
+
+각 인사이트 타입:
+- **insight**: 발견한 패턴이나 특징
+- **warning**: 주의해야 할 사항
+- **opportunity**: 기회나 가능성
+- **recommendation**: 추천사항
+
+응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
+"""
+        
+        # LLM 호출
+        print(f"[API] 핵심 인사이트 생성 - LLM 호출 시작 (날짜: {date})")
+        
+        if content_generator is None:
+            print(f"[API] 경고: content_generator가 None입니다. 기본값 반환")
+            raise HTTPException(status_code=503, detail="LLM 서비스가 초기화되지 않았습니다.")
+        
+        response = content_generator.analyze_data(prompt)
+        
+        print(f"[API] LLM 응답 타입: {type(response)}")
+        if isinstance(response, dict):
+            print(f"[API] LLM 응답 키: {list(response.keys())}")
+            if 'insights' in response:
+                insights_list = response.get('insights', [])
+                insights_count = len(insights_list)
+                print(f"[API] LLM 생성 핵심 인사이트 {insights_count}개 반환")
+                if insights_count > 0:
+                    return response
+        
+        # 기본 핵심 인사이트 생성
+        print(f"[API] LLM 응답을 파싱할 수 없어 기본 핵심 인사이트 생성")
+        return {
+            "insights": [
+                {
+                    "id": 1,
+                    "title": f"{weekday_kr} 방문 예측",
+                    "description": f"전체 {total_visits:,}명의 방문자가 예상됩니다. {'주말' if is_weekend else '평일'} 패턴을 보입니다.",
+                    "icon": "📊",
+                    "type": "insight",
+                    "value": f"{total_visits:,}명",
+                    "trend": "stable"
+                },
+                {
+                    "id": 2,
+                    "title": "혼잡도 수준",
+                    "description": f"평균 혼잡도 {avg_crowd:.1f}%로 {'높은' if avg_crowd > 60 else '보통' if avg_crowd > 40 else '낮은'} 수준입니다.",
+                    "icon": "⚠️" if avg_crowd > 60 else "📈",
+                    "type": "warning" if avg_crowd > 60 else "insight",
+                    "value": f"{avg_crowd:.1f}%",
+                    "trend": "up" if avg_crowd > 60 else "stable"
+                },
+                {
+                    "id": 3,
+                    "title": "최고 활성 공간",
+                    "description": f"{top_spaces[0].get('space', 'N/A')}이(가) {top_spaces[0].get('predicted_visit', 0):,}명으로 가장 많은 방문자가 예상됩니다.",
+                    "icon": "🎯",
+                    "type": "opportunity",
+                    "value": top_spaces[0].get('space', 'N/A') if top_spaces else "N/A",
+                    "trend": "up"
+                }
+            ]
+        }
+            
+    except Exception as e:
+        print(f"[API] 핵심 인사이트 생성 오류: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            "insights": [
+                {
+                    "id": 1,
+                    "title": "데이터 분석 중",
+                    "description": "핵심 인사이트를 생성하는 중입니다.",
+                    "icon": "📊",
+                    "type": "insight",
+                    "value": "-",
+                    "trend": "stable"
                 }
             ]
         }
@@ -1607,62 +1793,96 @@ async def llm_analysis(request: Dict):
 - 검증 신뢰도: 매우 높음 (다중 검증)
 """
         
-        # 문화 공간별 상세 정보 추출
+        # 날짜 정보 추출
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        date_label = date_obj.strftime('%Y년 %m월 %d일')
+        weekday_name = date_obj.strftime('%A')
+        weekday_kr = {'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일', 
+                      'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일'}.get(weekday_name, '')
+        is_weekend = date_obj.weekday() >= 5
+        
+        # 문화 공간별 상세 정보 추출 (큐레이션 메트릭 포함)
         space_details = []
         for p in predictions[:5]:
             space_name = p.get('space', p.get('spot', 'N/A'))
-            space_details.append(f"""
+            predicted_visit = p.get('predicted_visit', 0)
+            crowd_level = p.get('crowd_level', 0) * 100
+            optimal_time = p.get('optimal_time', 'N/A')
+            recommended_programs = p.get('recommended_programs', [])
+            
+            # 큐레이션 메트릭 추출
+            curation_metrics = p.get('curation_metrics', {})
+            top_programs = []
+            if curation_metrics:
+                for program_type, metrics in curation_metrics.items():
+                    if isinstance(metrics, dict):
+                        overall_score = metrics.get('overall_score', 0)
+                        if overall_score > 0.6:  # 높은 점수 프로그램만
+                            top_programs.append(f"{program_type} (추천도: {overall_score:.1f})")
+            
+            space_detail = f"""
 - **{space_name}**:
-  - 예측 방문 수: {p.get('predicted_visit', 0):,}명
-  - 혼잡도: {p.get('crowd_level', 0)*100:.1f}%
-  - 최적 시간: {p.get('optimal_time', 'N/A')}
-  - 추천 프로그램: {', '.join(p.get('recommended_programs', [])[:2])}
-""")
+  - 예상 방문자: {predicted_visit:,}명
+  - 혼잡도: {crowd_level:.1f}% ({'높음' if crowd_level > 60 else '보통' if crowd_level > 40 else '낮음'})
+  - 추천 방문 시간: {optimal_time}
+  - 추천 프로그램: {', '.join(recommended_programs[:3]) if recommended_programs else '없음'}
+"""
+            if top_programs:
+                space_detail += f"  - 큐레이션 추천: {', '.join(top_programs[:2])}\n"
+            space_details.append(space_detail)
         
-        # 강화된 프롬프트 생성
-        prompt = f"""당신은 파주시 출판단지 활성화를 위한 데이터 분석 전문가입니다. 
-다음 ML 예측 데이터를 심층적으로 분석하고 출판단지 및 문화 공간 활성화를 위한 실용적인 인사이트를 제공해주세요.
+        # 큐레이션 중심 프롬프트 생성
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 큐레이션 전문가입니다.
+예측 데이터를 바탕으로 **출판단지 큐레이터가 실제로 활용할 수 있는 실용적인 분석과 제안**을 제공해주세요.
 
-**프로젝트 배경**:
-이 프로젝트는 파주시 출판단지 활성화를 위한 AI 문화 및 콘텐츠 서비스입니다.
-생활인구 패턴, 소비 패턴, 문화 공간 데이터를 ML 모델로 분석하여 예측하고 있습니다.
+**중요**: 모델 성능, 정확도, 오차 등의 기술적 지표는 언급하지 마세요. 대신 방문자 예측과 패턴을 활용한 **구체적인 프로그램 제안과 운영 방안**에 집중해주세요.
 
-**예측 데이터 요약**:
-- 총 예측 방문 수: {total_visits:,}명
-- 평균 혼잡도: {avg_crowd:.1f}%
-- 모델 정확도 (R²): {model_accuracy:.1f}%
-- 평균 절대 오차 (MAE): {mae:.1f}명
-{cv_info}
-**문화 공간별 상세 예측**:
+**분석 기준 날짜**: {date_label} ({weekday_kr}, {"주말" if is_weekend else "평일"})
+
+**전체 예측 현황**:
+- 전체 예상 방문자: {total_visits:,}명
+- 평균 혼잡도: {avg_crowd:.1f}% ({'높은' if avg_crowd > 60 else '보통' if avg_crowd > 40 else '낮은'} 수준)
+- 날짜 유형: {"주말" if is_weekend else "평일"} ({"가족 단위 방문이 많을 것으로 예상" if is_weekend else "개인 취미 활동 중심 방문 예상"})
+
+**문화 공간별 상세 예측 (큐레이션 메트릭 포함)**:
 {''.join(space_details)}
 
-**분석 요청 (출판단지 활성화 관점에서)**:
-1. **주요 인사이트 (5-7개)**: 
-   - 데이터에서 발견한 중요한 패턴이나 특징
-   - 출판단지와 문화 공간 간의 연관성
-   - 시간대별/요일별 방문 패턴의 특징
-   - 생활인구와 문화 활동의 상관관계
+**분석 요청 (큐레이터 관점에서)**:
+
+1. **주요 인사이트 (5-7개)**:
+   - 각 문화 공간의 방문 패턴과 특징 (어떤 공간이 활발한지, 어떤 시간대에 방문이 많은지)
+   - {"주말" if is_weekend else "평일"} 특성에 맞는 방문자 행동 패턴
+   - 혼잡도 수준에 따른 프로그램 운영 전략
+   - 큐레이션 메트릭에서 추천된 프로그램 타입의 특징과 효과
 
 2. **실행 가능한 추천사항 (5-7개)**:
-   - 출판단지 활성화를 위한 구체적 전략
-   - 문화 프로그램 운영 최적화 방안
-   - 시간대별 프로그램 배치 제안
-   - 출판 관련 이벤트 기획 제안
+   - **구체적인 프로그램 제안**: 어떤 프로그램을 어느 공간에서 운영하면 좋을지
+   - **운영 시간 제안**: 예측된 방문 패턴에 맞춘 최적 운영 시간
+   - **타겟 고객 제안**: 예상 방문자 특성에 맞는 프로그램 타겟팅
+   - **마케팅 제안**: 방문자 유치를 위한 구체적 마케팅 방안
+   - **{"주말 특화 프로그램" if is_weekend else "평일 특화 프로그램"} 제안**: 날짜 유형에 맞는 특별 프로그램
 
 3. **트렌드 분석 및 전망 (3-5개)**:
-   - 단기/중기 트렌드 예측
-   - 계절별/시간대별 변화 패턴
-   - 출판단지 방문객 증가 전략
+   - 방문 패턴의 변화 추세 (증가/감소/안정)
+   - 계절적/시간대별 변화 특징
+   - 출판단지 활성화를 위한 단기/중기 전략 방향
+   - 큐레이션 메트릭에서 나타난 프로그램 선호도 트렌드
 
-**응답 형식**:
-다음 JSON 형식으로 응답해주세요. 각 항목은 구체적이고 실행 가능해야 합니다:
+**응답 형식** (JSON):
 {{
-  "insights": ["인사이트 1 (구체적 패턴과 데이터 근거 포함)", "인사이트 2", ...],
-  "recommendations": ["추천사항 1 (구체적 실행 방안 포함)", "추천사항 2", ...],
-  "trends": ["트렌드 분석 1 (미래 전망 포함)", "트렌드 분석 2", ...]
+  "insights": ["인사이트 1 (구체적 방문 패턴과 큐레이션 근거)", "인사이트 2", ...],
+  "recommendations": ["추천사항 1 (구체적 프로그램명과 운영 시간 포함)", "추천사항 2", ...],
+  "trends": ["트렌드 분석 1 (미래 운영 전략 방향 포함)", "트렌드 분석 2", ...]
 }}
 
-응답은 한국어로 작성하고, 출판단지 활성화와 문화 콘텐츠 큐레이터 관점을 강조해주세요.
+**응답 작성 원칙**:
+- ❌ 나쁜 예: "모델 정확도가 95%로 높습니다. R² 점수는..."
+- ✅ 좋은 예: "헤이리예술마을에서 주말 오후 2-4시에 방문자가 가장 많을 것으로 예상됩니다. 이 시간대에 '작가와의 만남' 프로그램을 운영하면 효과적일 것입니다."
+
+- ❌ 나쁜 예: "평균 절대 오차가 15명입니다."
+- ✅ 좋은 예: "예상 방문자 수가 1,200명이므로, 혼잡도 관리를 위해 주요 공간에 추가 인력을 배치하고 대기 공간을 확보하는 것을 권장합니다."
+
+응답은 한국어로 작성하고, 큐레이터가 바로 실행할 수 있는 구체적이고 실용적인 내용으로 작성해주세요.
 """
 
         # 생성형 AI 호출
@@ -1672,21 +1892,29 @@ async def llm_analysis(request: Dict):
 
     except Exception as e:
         print(f"[API] LLM 분석 오류: {e}")
-        # 기본값 반환
+        import traceback
+        traceback.print_exc()
+        
+        # 기본값 반환 (큐레이션 중심)
+        date_obj = datetime.strptime(date, '%Y-%m-%d')
+        is_weekend = date_obj.weekday() >= 5
+        weekday_kr = {'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일', 
+                      'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일'}.get(date_obj.strftime('%A'), '')
+        
         return {
             "insights": [
-                f"모델 정확도가 {model_metrics.get('r2', 0.98)*100:.1f}%로 높은 수준입니다. 예측 신뢰도가 우수합니다.",
-                f"평균 혼잡도가 {statistics.get('avg_crowd_level', 0.4)*100:.1f}%로 적정 수준입니다.",
-                "주말 시간대 방문 패턴이 증가 추세를 보입니다."
+                f"전체 {total_visits:,}명의 방문자가 예상됩니다. 평균 혼잡도는 {avg_crowd:.1f}%로 {'높은' if avg_crowd > 60 else '보통' if avg_crowd > 40 else '낮은'} 수준입니다.",
+                f"이 날짜는 {weekday_kr} ({'주말' if is_weekend else '평일'})로, {'가족 단위 방문이 많을 것으로 예상됩니다' if is_weekend else '개인 취미 활동 중심 방문이 예상됩니다'}.",
+                "문화 공간별 방문 패턴을 분석하여 맞춤형 프로그램을 운영하는 것이 효과적입니다."
             ],
             "recommendations": [
-                "주말 프로그램 확대를 권장합니다.",
-                "혼잡도가 높은 시간대에 대한 운영 시간 조정을 검토해보세요.",
-                "예측 모델 재훈련을 고려해볼 수 있습니다."
+                f"{'주말' if is_weekend else '평일'} 특성에 맞는 프로그램을 기획하여 운영하세요. {'가족 단위 프로그램' if is_weekend else '개인 취미 프로그램'}을 추천합니다.",
+                f"혼잡도가 {'높은' if avg_crowd > 60 else '보통' if avg_crowd > 40 else '낮은'} 수준이므로, {'추가 인력 배치와 대기 공간 확보' if avg_crowd > 60 else '일반 운영 유지'}를 권장합니다.",
+                "예측된 방문 패턴에 맞춰 프로그램 운영 시간을 조정하세요."
             ],
             "trends": [
-                "전반적인 방문 수가 증가하고 있습니다.",
-                "혼잡도는 점차 감소하고 있어 운영 효율이 개선되고 있습니다."
+                "전반적인 방문 수 추세를 지속적으로 모니터링하여 운영 계획을 조정하세요.",
+                f"{'주말' if is_weekend else '평일'} 방문 패턴을 분석하여 장기적인 프로그램 기획에 반영하세요."
             ]
         }
 

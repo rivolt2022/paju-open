@@ -6,15 +6,33 @@ import './ActionItems.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-function ActionItems({ predictions, statistics, date, onReportAdd }) {
+function ActionItems({ predictions, statistics, date, onReportAdd, trigger = 0 }) {
   const [actionItems, setActionItems] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // 페이지 로드 시 로딩 표시
   const [error, setError] = useState(null)
   const timeoutRef = useRef(null)
+  const lastTriggerRef = useRef(-1) // 마지막 트리거 값 추적
+  // 이전 값 추적 (데이터 변경 감지용)
+  const prevPredictionsRef = useRef(null)
+  const prevStatisticsRef = useRef(null)
+  const prevDateRef = useRef(null)
   
   const dateLabel = date ? new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' }) : '오늘'
 
-  const loadActionItems = useCallback(async () => {
+  const loadActionItems = useCallback(async (force = false) => {
+    // 중복 요청 방지 (force가 true이면 강제 실행)
+    if (!force && timeoutRef.current) {
+      console.log('[ActionItems] loadActionItems 중복 요청 방지 - 이미 로딩 중')
+      return
+    }
+    
+    // force가 true이고 이전 요청이 있으면 취소
+    if (force && timeoutRef.current) {
+      console.log('[ActionItems] 이전 요청 취소 - 새 요청 시작')
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+    
     console.log('[ActionItems] loadActionItems 함수 호출됨', { predictions: !!predictions, statistics: !!statistics, date })
     setLoading(true)
     setError(null)
@@ -193,27 +211,16 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
     }
   }, [predictions, statistics, date])
 
-  // 컴포넌트 마운트 여부 추적
-  const isMountedRef = useRef(false)
-  const hasLoadedRef = useRef(false)
-
   useEffect(() => {
     console.log('[ActionItems] useEffect 실행', { 
       hasPredictions: !!predictions, 
       hasStatistics: !!statistics, 
       date,
+      trigger,
+      lastTrigger: lastTriggerRef.current,
       predictionsType: typeof predictions,
-      statisticsType: typeof statistics,
-      predictionsValue: predictions,
-      statisticsValue: statistics,
-      isMounted: isMountedRef.current,
-      hasLoaded: hasLoadedRef.current
+      statisticsType: typeof statistics
     })
-    
-    // 마운트 상태 업데이트
-    if (!isMountedRef.current) {
-      isMountedRef.current = true
-    }
     
     // predictions와 statistics가 null이 아니고, 의미 있는 데이터가 있는지 확인
     // 빈 객체 {}도 null로 처리
@@ -252,51 +259,60 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
     const hasValidStatistics = !isNullishOrEmpty(statistics) && 
       Object.keys(statistics || {}).length > 0
     
-    // 디버깅: predictions와 statistics의 실제 값 확인
-    const predictionsKeys = predictions ? Object.keys(predictions) : []
-    const statisticsKeys = statistics ? Object.keys(statistics) : []
-    const predictionsIsEmptyObj = isEmptyObject(predictions)
-    const statisticsIsEmptyObj = isEmptyObject(statistics)
+    // 데이터 변경 감지 (null/undefined 안전 처리)
+    const predictionsChanged = (predictions !== prevPredictionsRef.current) && 
+      (predictions !== null && predictions !== undefined) &&
+      (prevPredictionsRef.current === null || prevPredictionsRef.current === undefined || 
+       JSON.stringify(predictions) !== JSON.stringify(prevPredictionsRef.current))
+    const statisticsChanged = (statistics !== prevStatisticsRef.current) && 
+      (statistics !== null && statistics !== undefined) &&
+      (prevStatisticsRef.current === null || prevStatisticsRef.current === undefined || 
+       JSON.stringify(statistics) !== JSON.stringify(prevStatisticsRef.current))
+    const dateChanged = date !== prevDateRef.current
+    const triggerChanged = trigger !== lastTriggerRef.current
     
-    console.log('[ActionItems] 데이터 유효성 검사', {
-      hasValidPredictions,
-      hasValidStatistics,
-      predictionsKeys,
-      statisticsKeys,
-      predictionsIsEmpty: predictionsIsEmptyObj,
-      statisticsIsEmpty: statisticsIsEmptyObj,
-      predictionsValue: predictions,
-      statisticsValue: statistics,
-      predictionsIsNull: predictions === null,
-      statisticsIsNull: statistics === null,
-      predictionsIsUndefined: predictions === undefined,
-      statisticsIsUndefined: statistics === undefined,
-      predictionsType: typeof predictions,
-      statisticsType: typeof statistics,
-      predictionsLength: Array.isArray(predictions) ? predictions.length : (predictions?.predictions?.length || 'N/A'),
-      statisticsLength: Array.isArray(statistics) ? statistics.length : Object.keys(statistics || {}).length
-    })
+    // 첫 로드 감지 (이전 값이 모두 null이면 첫 로드)
+    const isFirstLoad = prevPredictionsRef.current === null && prevStatisticsRef.current === null && prevDateRef.current === null
     
-    // 페이지 로드 시점(마운트 후 첫 실행) 또는 데이터가 유효할 때 loadActionItems 호출
-    const shouldLoad = !hasLoadedRef.current || (hasValidPredictions && hasValidStatistics)
+    // 로드 조건: 첫 로드 OR trigger 변경 시 API 호출
+    // 첫 로드 = 페이지 로드 시 (데이터 없어도 호출 - 빈 객체로 처리)
+    // trigger 변경 = 예측 실행 버튼 클릭 시 (새로운 데이터로 액션 아이템 생성 필요)
+    const shouldLoad = triggerChanged || isFirstLoad
     
     if (shouldLoad) {
       console.log('[ActionItems] loadActionItems 호출', {
-        reason: !hasLoadedRef.current ? '페이지 로드 시점 (초기 로드)' : '데이터 유효 (데이터 변경)',
+        reason: triggerChanged ? '예측 실행 버튼 클릭' : 
+                predictionsChanged || statisticsChanged ? '데이터 변경' : 
+                dateChanged ? '날짜 변경' : '페이지 로드',
+        trigger,
+        lastTrigger: lastTriggerRef.current,
         hasValidPredictions,
         hasValidStatistics,
-        hasLoaded: hasLoadedRef.current
+        predictionsChanged,
+        statisticsChanged,
+        dateChanged,
+        triggerChanged,
+        isFirstLoad
       })
-      loadActionItems()
-      hasLoadedRef.current = true
-    } else {
-      console.warn('[ActionItems] loadActionItems 호출 안 함', {
-        hasValidPredictions,
-        hasValidStatistics,
-        hasLoaded: hasLoadedRef.current,
-        predictions: predictions ? '있음' : '없음',
-        statistics: statistics ? '있음' : '없음'
-      })
+      
+      // trigger 변경 시 강제로 새 요청 실행
+      loadActionItems(triggerChanged)
+      if (triggerChanged) {
+        lastTriggerRef.current = trigger
+      }
+      // 이전 값 업데이트 (안전하게 처리)
+      try {
+        prevPredictionsRef.current = predictions ? JSON.parse(JSON.stringify(predictions)) : null
+        prevStatisticsRef.current = statistics ? JSON.parse(JSON.stringify(statistics)) : null
+        prevDateRef.current = date
+      } catch (e) {
+        console.warn('[ActionItems] 이전 값 업데이트 실패:', e)
+        prevPredictionsRef.current = predictions
+        prevStatisticsRef.current = statistics
+        prevDateRef.current = date
+      }
+    } else if (triggerChanged) {
+      lastTriggerRef.current = trigger
     }
     
     return () => {
@@ -304,7 +320,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
         clearTimeout(timeoutRef.current)
       }
     }
-  }, [predictions, statistics, date, loadActionItems])
+  }, [predictions, statistics, date, trigger, loadActionItems])
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -359,8 +375,8 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
     return iconMap[iconName] || iconMap.default
   }
 
-  // 로딩 중이고 액션 아이템이 없을 때만 로딩 표시 (최대 3초)
-  if (loading && actionItems.length === 0) {
+  // 로딩 중일 때 로딩 표시 (활성화 분석과 동일한 방식)
+  if (loading) {
     return (
       <div className="action-items-container">
         <div className="action-items-header">
@@ -368,7 +384,7 @@ function ActionItems({ predictions, statistics, date, onReportAdd }) {
           <span>당장 실행할 일</span>
         </div>
         <div className="action-items-loading">
-          <LoadingSpinner message="액션 아이템 생성 중..." size="medium" />
+          <LoadingSpinner message="액션 아이템 생성 중..." size="large" />
         </div>
       </div>
     )

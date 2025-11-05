@@ -4,6 +4,7 @@ import LoadingSpinner from './LoadingSpinner'
 import StatisticsCards from './StatisticsCards'
 import HeroSection from './HeroSection'
 import ActionItems from './ActionItems'
+import KeyInsights from './KeyInsights'
 import InsightCards from './InsightCards'
 import ActivityFeed from './ActivityFeed'
 import PredictionChart from './PredictionChart'
@@ -13,7 +14,6 @@ import HeatmapView from './HeatmapView'
 // import MetricsVisualization from './MetricsVisualization'
 import MeaningfulMetrics from './MeaningfulMetrics'
 import MetricsGroup from './MetricsGroup'
-import LLMAnalysisModal from './LLMAnalysisModal'
 import ChatModal from './ChatModal'
 import ChatButton from './ChatButton'
 import ToastContainer from './ToastContainer'
@@ -34,65 +34,60 @@ function Dashboard() {
   const [trendData, setTrendData] = useState(null)
   // 모델 지표는 큐레이션에 불필요하므로 제거
   // const [modelMetrics, setModelMetrics] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [showLLMModal, setShowLLMModal] = useState(false)
-  const [llmAnalysis, setLlmAnalysis] = useState(null)
+  const [loading, setLoading] = useState(false) // 페이지 로드 시 로딩 안 함
   const [showChatModal, setShowChatModal] = useState(false)
   const chatModalRef = useRef(null)
   const [hasInitialPrediction, setHasInitialPrediction] = useState(false)
   const isManualPredictRef = useRef(false) // 버튼 클릭으로 인한 예측인지 추적
   const [toasts, setToasts] = useState([])
   const toastIdRef = useRef(0)
+  const [actionItemsTrigger, setActionItemsTrigger] = useState(0) // ActionItems 갱신 트리거
+  const [keyInsightsTrigger, setKeyInsightsTrigger] = useState(0) // KeyInsights 갱신 트리거
+  const [meaningfulMetricsTrigger, setMeaningfulMetricsTrigger] = useState(0) // MeaningfulMetrics 갱신 트리거
+  const isLoadingRef = useRef(false) // 중복 요청 방지
 
-  // 페이지 로드 시 초기 날짜 데이터 자동 로드
-  useEffect(() => {
-    console.log('[Dashboard] 페이지 로드 - 초기 데이터 자동 로드', { selectedDate })
-    // 초기 로드 시에는 알림 표시하지 않음
-    loadData(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // 빈 배열 - 컴포넌트 마운트 시 한 번만 실행
+  // 페이지 로드 시 초기 데이터 자동 로드 제거
+  // 예측 실행 버튼을 누를 때만 API 호출
 
-  const loadData = async (showNotification = false) => {
-    console.log('[Dashboard] loadData 시작', { selectedDate, showNotification })
+  const loadData = async (showNotification = false, dateOverride = null) => {
+    // 중복 요청 방지
+    if (isLoadingRef.current) {
+      console.log('[Dashboard] loadData 중복 요청 방지 - 이미 로딩 중')
+      return
+    }
+    
+    const targetDate = dateOverride || selectedDate
+    console.log('[Dashboard] loadData 시작', { selectedDate, targetDate, showNotification })
+    isLoadingRef.current = true
     setLoading(true)
     try {
       console.log('[Dashboard] API 호출 시작', {
         predictionsEndpoint: `${API_BASE_URL}/api/predict/visits`,
         statisticsEndpoint: `${API_BASE_URL}/api/analytics/statistics`,
-        trendsEndpoint: `${API_BASE_URL}/api/analytics/trends`,
-        date: selectedDate
+        date: targetDate
       })
       
-      // 모든 HTTP 요청을 병렬로 처리
-      const [predictionsResponse, statsResponse, trendResponse] = await Promise.all([
+      // 필요한 HTTP 요청만 병렬로 처리 (trends는 사용하지 않으므로 제거)
+      const [predictionsResponse, statsResponse] = await Promise.all([
         // 예측 데이터 로드
         axios.post(`${API_BASE_URL}/api/predict/visits`, {
           cultural_spaces: ['헤이리예술마을', '파주출판단지', '교하도서관', '파주출판도시', '파주문화센터'],
-          date: selectedDate,
+          date: targetDate,
           time_slot: selectedTimeSlot === 'all' ? 'afternoon' : selectedTimeSlot,
         }, {
           timeout: 120000  // 타임아웃 120초로 증가
         }),
         // 통계 데이터 로드 (단일 날짜만 사용)
         axios.get(`${API_BASE_URL}/api/analytics/statistics`, {
-          params: { date: selectedDate },
+          params: { date: targetDate },
           timeout: 120000
-        }),
-        // 트렌드 데이터 로드 (선택된 날짜 하루만)
-        axios.get(`${API_BASE_URL}/api/analytics/trends`, {
-          params: { 
-            start_date: selectedDate,
-            end_date: selectedDate,
-          },
-          timeout: 120000  // 타임아웃 120초로 증가
         })
       ])
 
       // 모든 응답을 상태에 반영
       console.log('[Dashboard] 데이터 로드 완료 - 상태 업데이트', {
         predictionsData: predictionsResponse.data,
-        statisticsData: statsResponse.data,
-        trendData: trendResponse.data
+        statisticsData: statsResponse.data
       })
       
       console.log('[Dashboard] 상태 업데이트 전', {
@@ -104,7 +99,8 @@ function Dashboard() {
       
       setPredictions(predictionsResponse.data)
       setStatistics(statsResponse.data)
-      setTrendData(trendResponse.data)
+      // trends는 사용하지 않으므로 null로 설정
+      setTrendData(null)
       
       console.log('[Dashboard] 상태 업데이트 완료 - setPredictions/setStatistics 호출됨', {
         predictionsType: typeof predictionsResponse.data,
@@ -117,7 +113,7 @@ function Dashboard() {
 
       // 모든 요청 완료 시 화면 알림 표시
       if (showNotification) {
-        const dateLabel = new Date(selectedDate).toLocaleDateString('ko-KR', { 
+        const dateLabel = new Date(targetDate).toLocaleDateString('ko-KR', { 
           month: 'long', 
           day: 'numeric' 
         })
@@ -137,7 +133,7 @@ function Dashboard() {
         status: error.response?.status,
         stack: error.stack
       })
-      // 하드코딩된 값 제거 - 에러 발생 시 null로 설정
+      // 에러 발생 시 null로 설정
       setPredictions(null)
       setStatistics(null)
       setTrendData(null)
@@ -154,41 +150,7 @@ function Dashboard() {
       }
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleLLMAnalysis = async () => {
-    setShowLLMModal(true)
-    setLoading(true)
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/analytics/llm-analysis`, {
-        predictions: predictions?.predictions || [],
-        statistics: statistics,
-        date: selectedDate,
-      }, {
-        timeout: 120000  // 타임아웃 120초로 증가
-      })
-      setLlmAnalysis(response.data)
-      
-      // 리포트에 추가
-      const report = {
-        title: `종합 데이터 분석 리포트 (${selectedDate})`,
-        content: response.data,
-        type: 'analysis',
-        metadata: {
-          date: selectedDate,
-          source: '종합 분석'
-        }
-      }
-    } catch (error) {
-      console.error('LLM 분석 실패:', error)
-      setLlmAnalysis({
-        insights: ['ML 모델의 정확도가 높아 안정적인 예측이 가능합니다.', '주말 시간대 방문 패턴이 증가 추세입니다.'],
-        recommendations: ['주말 프로그램 확대를 권장합니다.', '예측 모델 재훈련을 고려해볼 수 있습니다.'],
-        trends: ['전반적인 방문 수가 증가하고 있습니다.', '혼잡도는 점차 감소하고 있습니다.']
-      })
-    } finally {
-      setLoading(false)
+      isLoadingRef.current = false
     }
   }
 
@@ -208,9 +170,32 @@ function Dashboard() {
   // 날짜 예측 핸들러 (HeroSection에서 예측 실행 버튼 클릭 시 호출됨)
   const handleDatePredict = async (date) => {
     isManualPredictRef.current = true // 버튼 클릭으로 인한 예측임을 표시
-    setSelectedDate(date)
-    // 버튼 클릭 시에는 알림을 표시하기 위해 직접 호출
-    await loadData(true) // showNotification = true
+    
+    // 날짜가 변경되었는지 확인
+    const dateChanged = date !== selectedDate
+    
+    // 날짜가 변경되었을 때만 Dashboard API 호출
+    if (dateChanged) {
+      setSelectedDate(date)
+      console.log('[Dashboard] 날짜 변경됨 - Dashboard API 호출', { oldDate: selectedDate, newDate: date })
+      await loadData(true, date) // showNotification = true, dateOverride = date
+    } else {
+      console.log('[Dashboard] 같은 날짜 재예측 - Dashboard API 호출 스킵', { date })
+    }
+    
+    // 예측 실행 후 각 섹션 갱신 트리거 업데이트
+    // (날짜가 변경되지 않았어도 ActionItems, KeyInsights, MeaningfulMetrics는 갱신)
+    // 상태 업데이트가 완료되기를 기다리기 위해 약간의 지연 추가
+    setTimeout(() => {
+      console.log('[Dashboard] 예측 실행 완료 - trigger 증가', {
+        dateChanged,
+        predictions: !!predictions,
+        statistics: !!statistics
+      })
+      setActionItemsTrigger(prev => prev + 1)
+      setKeyInsightsTrigger(prev => prev + 1)
+      setMeaningfulMetricsTrigger(prev => prev + 1)
+    }, dateChanged ? 200 : 0) // 날짜 변경 시에만 지연 추가
   }
 
 
@@ -220,7 +205,6 @@ function Dashboard() {
       <HeroSection 
         statistics={statistics} 
         predictions={predictions}
-        trendData={trendData}
         onDateChange={handleDateChange}
         onDatePredict={handleDatePredict}
         selectedDate={selectedDate}
@@ -233,6 +217,17 @@ function Dashboard() {
           predictions={predictions}
           statistics={statistics}
           date={selectedDate}
+          trigger={actionItemsTrigger}
+        />
+      </div>
+
+      {/* 핵심 인사이트 - 일일 요약 */}
+      <div className="key-insights-section">
+        <KeyInsights 
+          predictions={predictions}
+          statistics={statistics}
+          date={selectedDate}
+          trigger={keyInsightsTrigger}
         />
       </div>
 
@@ -248,6 +243,7 @@ function Dashboard() {
           date={selectedDate}
           startDate={selectedDate}
           endDate={selectedDate}
+          trigger={meaningfulMetricsTrigger}
           onMetricClick={(metricName, metricValue, metricType) => {
             setShowChatModal(true)
             setTimeout(() => {
@@ -273,15 +269,6 @@ function Dashboard() {
         }} 
         isOpen={showChatModal}
       />
-
-      {showLLMModal && (
-        <LLMAnalysisModal
-          isOpen={showLLMModal}
-          onClose={() => setShowLLMModal(false)}
-          analysis={llmAnalysis}
-          loading={loading}
-        />
-      )}
 
       {/* 채팅 모달 */}
       {showChatModal && (

@@ -1,0 +1,163 @@
+.key-insights-container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.key-insights-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.key-insights-icon {
+  color: #8b5cf6;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.key-insights-refresh {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 20px;
+}
+
+.key-insights-refresh:hover {
+  background: #f3f4f6;
+  color: #8b5cf6;
+}
+
+.key-insights-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.key-insights-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  padding: 40px 20px;
+}
+
+.key-insights-report {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.report-section {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #8b5cf6;
+}
+
+.report-section-summary {
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-left-color: #667eea;
+}
+
+.report-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.report-section-icon {
+  font-size: 24px;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.report-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.report-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.report-item-bullet {
+  color: #8b5cf6;
+  font-weight: bold;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.report-item-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0;
+  flex: 1;
+}
+
+.report-summary-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #374151;
+  margin: 0;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .key-insights-container {
+    padding: 16px;
+  }
+
+  .key-insights-header {
+    font-size: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+  }
+
+  .report-section {
+    padding: 16px;
+  }
+
+  .report-section-title {
+    font-size: 16px;
+  }
+
+  .report-item-text,
+  .report-summary-text {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}

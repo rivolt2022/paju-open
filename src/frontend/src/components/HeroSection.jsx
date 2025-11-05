@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MdMenuBook, MdDateRange, MdPlayArrow } from 'react-icons/md'
 import './HeroSection.css'
 
-export default function HeroSection({ statistics, predictions, trendData, onDateChange, onDatePredict, selectedDate = null, loading = false }) {
+export default function HeroSection({ statistics, predictions, onDateChange, onDatePredict, selectedDate = null, loading = false }) {
 
   // 단일 날짜만 사용 (하루만 예측)
   const [selectedDateValue, setSelectedDateValue] = useState(

@@ -8,11 +8,15 @@ import './MeaningfulMetrics.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000')
 
-function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, startDate = null, endDate = null }) {
+function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, startDate = null, endDate = null, trigger = 0 }) {
   const [metrics, setMetrics] = useState(null)
   const [activationScores, setActivationScores] = useState(null)
   const [vitality, setVitality] = useState(null)
   const [loading, setLoading] = useState(true)
+  const isLoadingRef = useRef(false) // 중복 요청 방지
+  const lastLoadParamsRef = useRef({ spaceName: null, date: null }) // 마지막 로드 파라미터 추적
+  const lastTriggerRef = useRef(0) // 마지막 trigger 값 추적
+  const hasLoadedMetricsRef = useRef(false) // loadMetrics가 실제로 호출되었는지 추적
   
   // 날짜 포맷 함수 (단일 날짜만 사용)
   const formatDateLabel = (dateValue) => {
@@ -31,11 +35,59 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
   const [showReportModal, setShowReportModal] = useState(false)
 
   useEffect(() => {
-    // 날짜나 공간이 변경되면 모든 LLM 인사이트 초기화
+    // trigger 변경 감지 (예측 실행 시 갱신을 위해)
+    const triggerChanged = trigger !== lastTriggerRef.current
+    
+    // 중복 요청 방지
+    if (isLoadingRef.current) {
+      console.log('[MeaningfulMetrics] 중복 요청 방지', { isLoading: isLoadingRef.current })
+      return
+    }
+    
+    // 첫 로드 감지 (이전 값이 모두 null이면 첫 로드)
+    const isFirstLoad = lastLoadParamsRef.current.date === null && lastLoadParamsRef.current.spaceName === null
+    
+    // 날짜나 공간이 실제로 변경되었는지 확인
+    const dateActuallyChanged = date && date !== lastLoadParamsRef.current.date
+    const spaceActuallyChanged = spaceName && spaceName !== lastLoadParamsRef.current.spaceName
+    
+    // trigger 변경 OR 첫 로드 OR 날짜/공간 변경 시 API 호출
+    if (!triggerChanged && !isFirstLoad && !dateActuallyChanged && !spaceActuallyChanged) {
+      console.log('[MeaningfulMetrics] 변경 없음 - API 호출 스킵', { 
+        triggerChanged,
+        isFirstLoad,
+        dateActuallyChanged,
+        spaceActuallyChanged,
+        date,
+        lastDate: lastLoadParamsRef.current.date,
+        trigger,
+        lastTrigger: lastTriggerRef.current
+      })
+      return
+    }
+    
+    // trigger 변경 시 (예측 실행) 날짜가 같아도 갱신
+    if (triggerChanged) {
+      console.log('[MeaningfulMetrics] 예측 실행으로 인한 갱신', { 
+        trigger, 
+        lastTrigger: lastTriggerRef.current,
+        date 
+      })
+    }
+    
+    // 모든 LLM 인사이트 초기화
     setLlmInsights({})
     setLlmLoading({})
+    setComprehensiveAnalysis(null) // 종합 분석도 초기화
+    // 로딩 상태를 즉시 표시
+    setLoading(true)
+    lastLoadParamsRef.current = { spaceName, date }
+    if (triggerChanged) {
+      lastTriggerRef.current = trigger
+    }
+    hasLoadedMetricsRef.current = false // loadMetrics 호출 전 플래그 초기화
     loadMetrics()
-  }, [spaceName, date])
+  }, [spaceName, date, trigger])
 
   useEffect(() => {
     // 컴포넌트 언마운트 시 타임아웃 정리
@@ -46,9 +98,9 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
     }
   }, [])
 
-  // 활성화 점수 LLM 인사이트 생성
+  // 활성화 점수 LLM 인사이트 생성 (loadMetrics 호출 후에만)
   useEffect(() => {
-    if (activationScores?.overall && !llmLoading['activation_scores'] && !llmInsights['activation_scores']) {
+    if (hasLoadedMetricsRef.current && activationScores?.overall && !llmLoading['activation_scores'] && !llmInsights['activation_scores']) {
       generateLLMInsight('activation_scores', '문화 공간 활성화 점수', activationScores.overall, {
         accessibility: activationScores.accessibility,
         interest: activationScores.interest,
@@ -59,9 +111,9 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
     }
   }, [activationScores?.overall])
 
-  // 성연령별 타겟팅 LLM 인사이트 생성
+  // 성연령별 타겟팅 LLM 인사이트 생성 (loadMetrics 호출 후에만)
   useEffect(() => {
-    if (metrics?.demographic_targeting && !llmLoading['demographic_targeting'] && !llmInsights['demographic_targeting']) {
+    if (hasLoadedMetricsRef.current && metrics?.demographic_targeting && !llmLoading['demographic_targeting'] && !llmInsights['demographic_targeting']) {
       const demographicData = Object.entries(metrics.demographic_targeting.demographic_scores || {}).map(([age, scores]) => ({
         age,
         male: (scores.male * 100).toFixed(0),
@@ -77,9 +129,9 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
     }
   }, [metrics?.demographic_targeting])
 
-  // 주말/평일 분석 LLM 인사이트 생성
+  // 주말/평일 분석 LLM 인사이트 생성 (loadMetrics 호출 후에만)
   useEffect(() => {
-    if (metrics?.weekend_analysis && !llmLoading['weekend_analysis'] && !llmInsights['weekend_analysis']) {
+    if (hasLoadedMetricsRef.current && metrics?.weekend_analysis && !llmLoading['weekend_analysis'] && !llmInsights['weekend_analysis']) {
       const weekendData = [
         { name: '평일', value: metrics.weekend_analysis.weekday_average },
         { name: '주말', value: metrics.weekend_analysis.weekend_average }
@@ -93,9 +145,9 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
     }
   }, [metrics?.weekend_analysis])
 
-  // 출판단지 활성화 지수 LLM 인사이트 생성
+  // 출판단지 활성화 지수 LLM 인사이트 생성 (loadMetrics 호출 후에만)
   useEffect(() => {
-    if (vitality?.overall_publishing_complex_vitality && !llmLoading['publishing_vitality'] && !llmInsights['publishing_vitality']) {
+    if (hasLoadedMetricsRef.current && vitality?.overall_publishing_complex_vitality && !llmLoading['publishing_vitality'] && !llmInsights['publishing_vitality']) {
       generateLLMInsight('publishing_vitality', '출판단지 활성화 지수', vitality.overall_publishing_complex_vitality * 100, {
         trend: vitality.trend,
         regional_indices: vitality.regional_indices
@@ -154,15 +206,21 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
   }, [spaceName, date, activationScores, metrics, vitality, comprehensiveAnalysisLoading, comprehensiveAnalysis])
 
   useEffect(() => {
-    // 모든 주요 데이터가 로드되면 종합 분석 생성
-    if (metrics && activationScores && vitality && !comprehensiveAnalysis && !comprehensiveAnalysisLoading) {
+    // loadMetrics가 호출된 후에만 종합 분석 생성 (예측 실행 시 불필요한 API 호출 방지)
+    if (hasLoadedMetricsRef.current && metrics && activationScores && vitality && !comprehensiveAnalysis && !comprehensiveAnalysisLoading) {
       console.log('[MeaningfulMetrics] 종합 분석 생성 시작', { metrics: !!metrics, activationScores: !!activationScores, vitality: !!vitality })
       generateComprehensiveAnalysis()
     }
   }, [metrics, activationScores, vitality, comprehensiveAnalysis, comprehensiveAnalysisLoading, generateComprehensiveAnalysis])
 
   const loadMetrics = async () => {
-    setLoading(true)
+    // 중복 요청 방지
+    if (isLoadingRef.current) {
+      console.log('[MeaningfulMetrics] loadMetrics 중복 요청 방지')
+      return
+    }
+    
+    isLoadingRef.current = true
     try {
       // 종합 지표 로드 (날짜 파라미터 포함)
       const metricsResponse = await axios.get(`${API_BASE_URL}/api/analytics/meaningful-metrics`, {
@@ -190,10 +248,14 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
       })
       setVitality(vitalityResponse.data)
 
+      // loadMetrics 완료 후 플래그 설정 (이제 LLM API 호출 가능)
+      hasLoadedMetricsRef.current = true
+
     } catch (error) {
       console.error('지표 로드 오류:', error)
     } finally {
       setLoading(false)
+      isLoadingRef.current = false
     }
   }
 
@@ -341,7 +403,22 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
   }
 
   if (loading) {
-    return <div className="meaningful-metrics-loading">지표를 계산하는 중...</div>
+    return (
+      <div className="meaningful-metrics">
+        <div className="metrics-header">
+          <div className="metrics-header-top">
+            <h2 className="metrics-title">
+              <MdMenuBook className="header-icon" />
+              출판단지 활성화를 위한 AI 분석
+            </h2>
+          </div>
+          <p className="metrics-subtitle">AI 문화 및 콘텐츠 서비스를 통한 지역 활성화 데이터 분석</p>
+        </div>
+        <div className="metrics-loading-container">
+          <LoadingSpinner message="지표 데이터를 불러오는 중..." size="large" />
+        </div>
+      </div>
+    )
   }
 
   if (!metrics && !activationScores) {
