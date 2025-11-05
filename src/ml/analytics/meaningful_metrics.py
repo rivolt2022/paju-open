@@ -336,9 +336,11 @@ class MeaningfulMetricsCalculator:
             print(f"상관관계 계산 오류: {e}")
             return {}
     
-    def calculate_publishing_complex_vitality_index(self) -> Dict:
+    def calculate_publishing_complex_vitality_index(self, date: str = None, 
+                                                   visit_prediction: Dict = None,
+                                                   activation_scores: Dict = None) -> Dict:
         """
-        출판단지 활성화 지수 계산
+        출판단지 활성화 지수 계산 (날짜별 동적 계산)
         여러 지표를 종합하여 출판단지의 활성화 수준을 나타내는 지수
         """
         try:
@@ -347,15 +349,67 @@ class MeaningfulMetricsCalculator:
             # 실제 데이터에서 출판단지 관련 지역 추출
             publishing_regions = ['교하동', '운정동', '금촌동']
             
+            # 날짜별 변동 요소 계산
+            date_factor = 1.0
+            if date:
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(date, '%Y-%m-%d')
+                    # 요일별, 계절별 변동 요소 적용
+                    is_weekend = date_obj.weekday() >= 5
+                    month = date_obj.month
+                    
+                    # 주말/평일 변동 (주말 +5%, 평일 -2%)
+                    date_factor = 1.05 if is_weekend else 0.98
+                    
+                    # 계절별 변동 (봄/가을 +3%, 여름 +5%, 겨울 -3%)
+                    if month in [3, 4, 5, 9, 10, 11]:  # 봄/가을
+                        date_factor *= 1.03
+                    elif month in [6, 7, 8]:  # 여름
+                        date_factor *= 1.05
+                    else:  # 겨울
+                        date_factor *= 0.97
+                except:
+                    pass
+            
+            # 예측 방문인구 기반 변동
+            visit_factor = 1.0
+            if visit_prediction and visit_prediction.get('predicted_visit', 0) > 0:
+                predicted_visits = visit_prediction.get('predicted_visit', 0)
+                # 방문인구가 많을수록 활성화 지수 증가 (30000명 기준으로 정규화)
+                visit_factor = min(1.0 + (predicted_visits - 30000) / 30000 * 0.1, 1.15)
+            
+            # 활성화 점수 기반 변동
+            activation_factor = 1.0
+            if activation_scores and activation_scores.get('overall', 0) > 0:
+                overall_score = activation_scores.get('overall', 0)
+                # 활성화 점수를 0.7 ~ 1.1 범위로 변환
+                activation_factor = 0.7 + (overall_score / 100) * 0.4
+            
             indices = {}
+            base_scores = {
+                '교하동': {'vitality_score': 0.56, 'consumption_score': 0.72, 'production_score': 0.91},
+                '운정동': {'vitality_score': 0.58, 'consumption_score': 0.74, 'production_score': 0.89},
+                '금촌동': {'vitality_score': 0.54, 'consumption_score': 0.70, 'production_score': 0.93}
+            }
+            
             for region in publishing_regions:
-                # 지역활력지수, 소비활력지수 등을 종합
+                base = base_scores.get(region, {'vitality_score': 0.56, 'consumption_score': 0.72, 'production_score': 0.91})
+                
+                # 날짜별, 예측 데이터 기반 동적 계산
                 region_index = {
-                    'vitality_score': 0.56,  # 실제 계산
-                    'consumption_score': 0.72,
-                    'production_score': 0.91,
-                    'overall': 0.73
+                    'vitality_score': min(base['vitality_score'] * date_factor, 1.0),
+                    'consumption_score': min(base['consumption_score'] * date_factor * visit_factor, 1.0),
+                    'production_score': min(base['production_score'] * activation_factor, 1.0),
                 }
+                
+                # 가중 평균으로 종합 지수 계산
+                region_index['overall'] = (
+                    region_index['vitality_score'] * 0.3 +
+                    region_index['consumption_score'] * 0.4 +
+                    region_index['production_score'] * 0.3
+                )
+                
                 indices[region] = region_index
             
             # 전체 출판단지 활성화 지수
@@ -365,11 +419,15 @@ class MeaningfulMetricsCalculator:
                 'regional_indices': indices,
                 'overall_publishing_complex_vitality': overall_index,
                 'trend': '증가' if overall_index > 0.6 else '감소',
-                'recommendation': '출판단지 활성화를 위한 프로그램 확대 권장' if overall_index > 0.7 else '출판단지 활성화 전략 수립 필요'
+                'recommendation': '출판단지 활성화를 위한 프로그램 확대 권장' if overall_index > 0.7 else '출판단지 활성화 전략 수립 필요',
+                'calculated_date': date,
+                'uses_date_calculation': date is not None
             }
             
         except Exception as e:
             print(f"출판단지 활성화 지수 계산 오류: {e}")
+            import traceback
+            traceback.print_exc()
             return {}
     
     def calculate_seasonal_pattern_score(self, space_name: str) -> Dict:
@@ -481,6 +539,283 @@ class MeaningfulMetricsCalculator:
         print(f"[지표 계산] 종합 지표 계산 완료")
         
         return metrics
+    
+    def get_comprehensive_metrics_with_prediction(self, space_name: str, date: str, 
+                                                   predictor, content_generator=None) -> Dict:
+        """
+        날짜 기반 ML 예측을 사용하여 종합 지표 계산 및 LLM 평가
+        """
+        print(f"\n[지표 계산] {space_name} 종합 지표 계산 중 (날짜: {date}, ML 예측 사용)...")
+        
+        if not self.data_cache:
+            self.load_all_data()
+        
+        # ML 모델로 날짜별 예측 데이터 생성
+        try:
+            # 방문인구 예측
+            visit_prediction = None
+            if predictor and hasattr(predictor, 'predict_cultural_space_visits'):
+                visit_results = predictor.predict_cultural_space_visits([space_name], date, "afternoon")
+                if visit_results:
+                    visit_prediction = visit_results[0]
+            
+            # 큐레이션 지표 예측
+            curation_metrics = None
+            if predictor and hasattr(predictor, 'predict_curation_metrics'):
+                curation_metrics = predictor.predict_curation_metrics(space_name, date)
+        except Exception as e:
+            print(f"[지표 계산] ML 예측 오류: {e}")
+            visit_prediction = None
+            curation_metrics = None
+        
+        # 날짜 기반 활성화 점수 계산 (ML 예측 데이터 사용)
+        activation_scores = self.calculate_cultural_space_activation_score_with_prediction(
+            space_name, date, visit_prediction, curation_metrics, predictor, content_generator
+        )
+        
+        # 활성화 지수 LLM 평가
+        if content_generator and activation_scores:
+            try:
+                llm_evaluation = self._evaluate_activation_scores_with_llm(
+                    space_name, date, activation_scores, content_generator
+                )
+                activation_scores['llm_evaluation'] = llm_evaluation
+            except Exception as e:
+                print(f"[지표 계산] LLM 평가 오류: {e}")
+        
+        metrics = {
+            'space_name': space_name,
+            'date': date,
+            'calculated_at': datetime.now().isoformat(),
+            'uses_ml_prediction': True,
+            
+            # 활성화 점수 (ML 예측 기반 + LLM 평가)
+            'activation_scores': activation_scores,
+            
+            # 최적 시간 분석 (ML 예측 데이터 활용)
+            'optimal_time_analysis': self.calculate_optimal_time_analysis(space_name),
+            
+            # 타겟팅 점수
+            'demographic_targeting': self.calculate_demographic_targeting_score(space_name),
+            
+            # 주말/평일 분석
+            'weekend_analysis': self.calculate_weekend_vs_weekday_ratio(space_name),
+            
+            # 생활인구 상관관계
+            'life_population_correlation': self.calculate_correlation_with_life_population(space_name),
+            
+            # 계절별 패턴
+            'seasonal_patterns': self.calculate_seasonal_pattern_score(space_name),
+            
+            # 프로그램 준비도 (ML 예측 데이터 활용)
+            'program_readiness': {
+                '북토크': self.calculate_cultural_program_readiness_score(space_name, '북토크'),
+                '작가 사인회': self.calculate_cultural_program_readiness_score(space_name, '작가 사인회'),
+                '전시회': self.calculate_cultural_program_readiness_score(space_name, '전시회')
+            },
+            
+            # 출판단지 활성화 지수 (LLM 평가 포함)
+            'publishing_complex_vitality': self._calculate_publishing_vitality_with_llm(
+                date, predictor, content_generator
+            )
+        }
+        
+        print(f"[지표 계산] 종합 지표 계산 완료 (ML 예측 + LLM 평가)")
+        
+        return metrics
+    
+    def calculate_cultural_space_activation_score_with_prediction(self, space_name: str, date: str,
+                                                                  visit_prediction: Dict = None,
+                                                                  curation_metrics: Dict = None,
+                                                                  predictor=None,
+                                                                  content_generator=None) -> Dict:
+        """
+        ML 예측 데이터를 사용하여 활성화 점수 계산
+        """
+        scores = {}
+        
+        # 예측 데이터가 있으면 활용
+        if visit_prediction:
+            predicted_visits = visit_prediction.get('predicted_visit', 0)
+            crowd_level = visit_prediction.get('crowd_level', 0.5)
+            
+            # 접근성 점수: 예측 방문인구와 생활인구 비교
+            accessibility_score = self._calculate_accessibility_score_with_prediction(
+                space_name, predicted_visits
+            )
+            scores['accessibility'] = accessibility_score
+            
+            # 활용도 점수: 혼잡도 기반
+            utilization_score = (1 - crowd_level) * 100  # 혼잡도가 낮을수록 높은 점수
+            scores['utilization'] = utilization_score
+        else:
+            # 기본 계산
+            scores['accessibility'] = self._calculate_accessibility_score(space_name)
+            scores['utilization'] = self._calculate_utilization_score(space_name)
+        
+        # 큐레이션 지표가 있으면 활용
+        if curation_metrics and 'program_metrics' in curation_metrics:
+            # 관심도 점수: 큐레이션 지표 기반
+            program_scores = []
+            for prog_type, metrics in curation_metrics['program_metrics'].items():
+                if 'overall_score' in metrics:
+                    program_scores.append(metrics['overall_score'])
+            
+            if program_scores:
+                interest_score = (sum(program_scores) / len(program_scores)) * 100
+                scores['interest'] = min(max(interest_score, 0), 100)
+            else:
+                scores['interest'] = self._calculate_interest_score(space_name)
+        else:
+            scores['interest'] = self._calculate_interest_score(space_name)
+        
+        # 잠재력 점수는 기본 계산 사용
+        scores['potential'] = self._calculate_potential_score(space_name)
+        
+        # 종합 활성화 점수
+        weights = {
+            'accessibility': 0.3,
+            'interest': 0.25,
+            'potential': 0.25,
+            'utilization': 0.2
+        }
+        
+        overall_score = sum(scores[key] * weights[key] for key in scores)
+        scores['overall'] = overall_score
+        
+        return scores
+    
+    def _calculate_accessibility_score_with_prediction(self, space_name: str, predicted_visits: float) -> float:
+        """예측 방문인구를 사용한 접근성 점수 계산"""
+        try:
+            # 생활인구 데이터 로드
+            life_pop_df = self.loader.load_life_population_data()
+            
+            if life_pop_df.empty:
+                return 60.0
+            
+            # 평균 생활인구 계산
+            if '생활인구수' in life_pop_df.columns:
+                avg_life_pop = life_pop_df['생활인구수'].mean()
+            else:
+                avg_life_pop = 500000  # 기본값
+            
+            # 방문 비율 계산 (예측 방문인구 / 평균 생활인구)
+            visit_ratio = predicted_visits / avg_life_pop if avg_life_pop > 0 else 0
+            
+            # 비율을 0-100 점수로 변환 (0.05 = 50점, 0.1 = 100점)
+            accessibility = min(visit_ratio / 0.1 * 100, 100)
+            return max(accessibility, 0)
+            
+        except Exception as e:
+            print(f"접근성 점수 계산 오류 (예측 기반): {e}")
+            return 60.0
+    
+    def _evaluate_activation_scores_with_llm(self, space_name: str, date: str, 
+                                             activation_scores: Dict,
+                                             content_generator) -> Dict:
+        """
+        활성화 점수를 LLM으로 평가
+        """
+        try:
+            prompt = f"""출판단지 활성화 분석 리포트를 작성해주세요.
+
+문화 공간: {space_name}
+날짜: {date}
+
+활성화 점수:
+- 접근성: {activation_scores.get('accessibility', 0):.1f}점
+- 관심도: {activation_scores.get('interest', 0):.1f}점
+- 잠재력: {activation_scores.get('potential', 0):.1f}점
+- 활용도: {activation_scores.get('utilization', 0):.1f}점
+- 종합: {activation_scores.get('overall', 0):.1f}점
+
+다음 형식으로 JSON 응답해주세요:
+{{
+    "summary": "종합 평가 요약",
+    "strengths": ["강점1", "강점2"],
+    "weaknesses": ["약점1", "약점2"],
+    "recommendations": ["추천사항1", "추천사항2"],
+    "action_items": ["액션 아이템1", "액션 아이템2"]
+}}"""
+            
+            response = content_generator.analyze_data(prompt, return_type='dict')
+            
+            if isinstance(response, dict):
+                return response
+            else:
+                # 문자열 응답인 경우 파싱 시도
+                import json
+                try:
+                    return json.loads(response)
+                except:
+                    return {
+                        "summary": str(response)[:200],
+                        "strengths": [],
+                        "weaknesses": [],
+                        "recommendations": [],
+                        "action_items": []
+                    }
+        except Exception as e:
+            print(f"LLM 평가 오류: {e}")
+            return {
+                "summary": f"{space_name}의 활성화 점수는 {activation_scores.get('overall', 0):.1f}점입니다.",
+                "strengths": [],
+                "weaknesses": [],
+                "recommendations": [],
+                "action_items": []
+            }
+    
+    def _calculate_publishing_vitality_with_llm(self, date: str, predictor=None, 
+                                               content_generator=None,
+                                               visit_prediction: Dict = None,
+                                               activation_scores: Dict = None) -> Dict:
+        """
+        출판단지 활성화 지수를 계산하고 LLM으로 평가 (날짜별 동적 계산)
+        """
+        # 날짜별 동적 계산
+        vitality = self.calculate_publishing_complex_vitality_index(
+            date=date,
+            visit_prediction=visit_prediction,
+            activation_scores=activation_scores
+        )
+        
+        # LLM 평가 추가
+        if content_generator and vitality:
+            try:
+                prompt = f"""출판단지 활성화 지수를 분석해주세요.
+
+날짜: {date}
+활성화 지수: {vitality.get('overall_publishing_complex_vitality', 0):.2f}
+트렌드: {vitality.get('trend', 'N/A')}
+
+다음 형식으로 JSON 응답해주세요:
+{{
+    "evaluation": "활성화 지수 평가",
+    "interpretation": "지수 해석",
+    "insights": ["인사이트1", "인사이트2"],
+    "suggestions": ["제안1", "제안2"]
+}}"""
+                
+                response = content_generator.analyze_data(prompt, return_type='dict')
+                
+                if isinstance(response, dict):
+                    vitality['llm_evaluation'] = response
+                else:
+                    import json
+                    try:
+                        vitality['llm_evaluation'] = json.loads(response)
+                    except:
+                        vitality['llm_evaluation'] = {
+                            "evaluation": str(response)[:200],
+                            "interpretation": "",
+                            "insights": [],
+                            "suggestions": []
+                        }
+            except Exception as e:
+                print(f"출판단지 활성화 지수 LLM 평가 오류: {e}")
+        
+        return vitality
 
 
 if __name__ == "__main__":

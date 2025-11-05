@@ -81,10 +81,10 @@ except Exception as e:
     print(f"[Backend] ML 서비스 초기화 실패: {e}")
     ml_service = None
 
-# 유의미한 지표 서비스
+# 유의미한 지표 서비스 (predictor와 content_generator 전달)
 print("[Backend] 유의미한 지표 서비스 초기화 중...")
 try:
-    meaningful_metrics_service = get_meaningful_metrics_service()
+    meaningful_metrics_service = get_meaningful_metrics_service(predictor, content_generator)
     print("[Backend] 유의미한 지표 서비스 초기화 완료")
 except Exception as e:
     print(f"[Backend] 유의미한 지표 서비스 초기화 실패: {e}")
@@ -815,7 +815,7 @@ async def get_publishing_vitality(date: str = None):
 
 @app.post("/api/analytics/comprehensive-publishing-analysis")
 async def comprehensive_publishing_analysis(request: Dict):
-    """출판단지 활성화 종합 분석 (LLM 강화)"""
+    """출판단지 활성화 종합 분석 (ML 예측 기반 + LLM 강화)"""
     try:
         from datetime import datetime
         space_name = request.get('space_name', '헤이리예술마을')
@@ -824,70 +824,119 @@ async def comprehensive_publishing_analysis(request: Dict):
         metrics = request.get('metrics', {})
         vitality = request.get('vitality', {})
         
+        # ML 예측 데이터 생성 (날짜가 있으면)
+        ml_prediction_data = {}
+        if date and predictor:
+            try:
+                # 방문인구 예측
+                visit_results = predictor.predict_cultural_space_visits([space_name], date, "afternoon")
+                if visit_results:
+                    ml_prediction_data['visit_prediction'] = visit_results[0]
+                
+                # 큐레이션 지표 예측
+                curation_metrics_pred = predictor.predict_curation_metrics(space_name, date)
+                if curation_metrics_pred:
+                    ml_prediction_data['curation_metrics'] = curation_metrics_pred
+                
+                print(f"[API] ML 예측 데이터 생성 완료: {date}")
+            except Exception as e:
+                print(f"[API] ML 예측 오류: {e}")
+                ml_prediction_data = {}
+        
         # 데이터 요약
         activation_overall = activation_scores.get('overall', 0)
         vitality_score = vitality.get('overall_publishing_complex_vitality', 0) * 100
         weekend_ratio = metrics.get('weekend_analysis', {}).get('weekend_ratio', 1.0)
         demographic_targeting = metrics.get('demographic_targeting', {})
         
+        # ML 예측 데이터 요약
+        predicted_visits = ml_prediction_data.get('visit_prediction', {}).get('predicted_visit', 0)
+        crowd_level = ml_prediction_data.get('visit_prediction', {}).get('crowd_level', 0)
+        curation_metrics_summary = ""
+        if ml_prediction_data.get('curation_metrics'):
+            best_programs = []
+            for prog_type, prog_metrics in ml_prediction_data['curation_metrics'].get('program_metrics', {}).items():
+                if prog_metrics.get('recommended', False):
+                    best_programs.append(f"{prog_type}({prog_metrics.get('overall_score', 0):.1f}점)")
+            if best_programs:
+                curation_metrics_summary = f"추천 프로그램: {', '.join(best_programs[:3])}"
+        
         # 날짜 레이블 생성
         date_obj = datetime.strptime(date, '%Y-%m-%d')
         date_label = date_obj.strftime('%Y년 %m월 %d일')
+        weekday_name = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'][date_obj.weekday()]
+        is_weekend = date_obj.weekday() >= 5
         
-        # LLM 프롬프트 생성
-        prompt = f"""당신은 파주시 출판단지 활성화를 위한 전문 AI 분석가입니다. 
-다음 데이터를 종합적으로 분석하여 출판단지 활성화를 위한 실행 가능한 전략을 제시해주세요.
+        # LLM 프롬프트 생성 (자연스러운 서술형으로)
+        prompt = f"""당신은 파주시 출판단지 활성화를 위한 전문 큐레이션 분석가입니다.
+다음 데이터를 종합적으로 분석하여, 출판단지 활성화를 위한 실용적이고 창의적인 전략을 제시해주세요.
 
-**분석 기준 날짜**: {date_label} ({date})
+**분석 기준 날짜**: {date_label} ({date}, {weekday_name})
+**날짜 특성**: {'주말' if is_weekend else '평일'} - {'주말 프로그램 확대 기회' if is_weekend else '평일 방문 활성화 필요'}
 
-**현재 상태 데이터**:
+**해당 날짜 예상 현황**:
+- 예상 방문인구: {predicted_visits:,.0f}명
+- 예상 혼잡도: {crowd_level*100:.1f}% {'(혼잡 예상)' if crowd_level > 0.7 else '(여유 예상)' if crowd_level < 0.5 else '(보통)'}
+- {curation_metrics_summary if curation_metrics_summary else '추천 프로그램 데이터 없음'}
+
+**현재 활성화 지표**:
 - 문화 공간 활성화 점수: {activation_overall:.1f}점 / 100점
+  * 접근성: {activation_scores.get('accessibility', 0):.1f}점
+  * 관심도: {activation_scores.get('interest', 0):.1f}점
+  * 잠재력: {activation_scores.get('potential', 0):.1f}점
+  * 활용도: {activation_scores.get('utilization', 0):.1f}점
 - 출판단지 활성화 지수: {vitality_score:.1f}점 / 100점
 - 주말/평일 비율: {weekend_ratio:.2f}배
-- 성연령별 타겟팅: {json.dumps(demographic_targeting, ensure_ascii=False, indent=2) if demographic_targeting else '데이터 없음'}
-
-**활성화 점수 세부**:
-{json.dumps(activation_scores, ensure_ascii=False, indent=2) if activation_scores else '데이터 없음'}
+- 주요 타겟: {demographic_targeting.get('recommended_target', {}).get('age_group', 'N/A')} {demographic_targeting.get('recommended_target', {}).get('gender', 'N/A')} (점수: {demographic_targeting.get('recommended_target', {}).get('score', 0):.2f})
 
 **지역별 활성화 지수**:
 {json.dumps(vitality.get('regional_indices', {}), ensure_ascii=False, indent=2) if vitality.get('regional_indices') else '데이터 없음'}
 
 **요구사항**:
-1. **분석 요약**: 전체적인 출판단지 활성화 상태를 한 문단으로 요약 (100-150자)
-2. **서술형 분석**: 현재 상태에 대한 상세한 서술형 분석 (3-5개 문단, 각 100-200자)
-   - 현재 활성화 상태에 대한 종합 평가
-   - 주요 지표들의 의미와 해석
-   - 트렌드 및 패턴 분석
-   - 지역별 특성 및 차이점
-   - 데이터가 시사하는 바
-3. **주요 강점**: 현재 활성화에 기여하는 강점 3-5개를 구체적으로 제시
-4. **개선 필요 영역**: 활성화를 저해하는 요인 3-5개를 구체적으로 제시
-5. **활성화 기회**: 데이터에서 발견할 수 있는 새로운 활성화 기회 3-5개
-6. **실행 가능한 추천사항**: 즉시 실행 가능한 구체적인 추천사항 5-7개
-7. **단계별 실행 계획**: 우선순위가 높은 5단계 실행 계획
+1. **분석 요약** (100-150자): 해당 날짜의 출판단지 활성화 상태를 종합적으로 요약
+2. **서술형 분석** (5-7개 문단, 각 100-250자):
+   - 해당 날짜의 활성화 전망과 특징
+   - 예상 방문인구와 혼잡도를 고려한 프로그램 운영 전략
+   - 활성화 점수 각 항목의 의미와 개선 방향
+   - 주말/평일 패턴과 해당 날짜의 특성 연계 분석
+   - 지역별 차이점과 통합 활성화 전략
+   - 큐레이션 지표 기반 프로그램 추천 근거
+   - 향후 트렌드 전망과 실행 계획
+
+3. **주요 강점** (3-5개): 현재 활성화에 기여하는 강점
+4. **개선 필요 영역** (3-5개): 저조한 지표와 개선이 필요한 영역
+5. **활성화 기회** (5-7개): 데이터에서 발견한 새로운 활성화 기회와 창의적 아이디어
+6. **실행 가능한 추천사항** (7-10개): 해당 날짜에 맞춘 구체적이고 실용적인 추천
+7. **단계별 실행 계획** (5단계): 우선순위별 실행 계획
 
 **응답 형식** (JSON):
 {{
-  "summary": "분석 요약 (100-150자)",
+  "summary": "해당 날짜의 출판단지 활성화 상태 요약 (100-150자)",
   "detailed_analysis": [
-    "첫 번째 문단: 현재 활성화 상태에 대한 종합 평가 (100-200자)",
-    "두 번째 문단: 주요 지표들의 의미와 해석 (100-200자)",
-    "세 번째 문단: 트렌드 및 패턴 분석 (100-200자)",
-    "네 번째 문단: 지역별 특성 및 차이점 (100-200자)",
-    "다섯 번째 문단: 데이터가 시사하는 바 및 전망 (100-200자)"
+    "해당 날짜의 활성화 전망과 특징 (100-250자)",
+    "예상 방문인구와 혼잡도를 고려한 프로그램 운영 전략 (100-250자)",
+    "활성화 점수 각 항목의 의미와 개선 방향 (100-250자)",
+    "주말/평일 패턴과 해당 날짜의 특성 연계 분석 (100-250자)",
+    "지역별 차이점과 통합 활성화 전략 (100-250자)",
+    "큐레이션 지표 기반 프로그램 추천 근거 (100-250자)",
+    "향후 트렌드 전망과 실행 계획 (100-250자)"
   ],
-  "strengths": ["강점 1", "강점 2", "강점 3"],
-  "weaknesses": ["개선점 1", "개선점 2", "개선점 3"],
-  "opportunities": ["기회 1", "기회 2", "기회 3"],
-  "recommendations": ["추천 1", "추천 2", "추천 3", "추천 4", "추천 5"],
-  "action_plan": ["1단계: ...", "2단계: ...", "3단계: ...", "4단계: ...", "5단계: ..."]
+  "strengths": ["강점 1 (50-100자)", "강점 2", "강점 3", "강점 4", "강점 5"],
+  "weaknesses": ["개선점 1 (50-100자)", "개선점 2", "개선점 3", "개선점 4", "개선점 5"],
+  "opportunities": ["기회 1 (50-100자)", "기회 2", "기회 3", "기회 4", "기회 5", "기회 6", "기회 7"],
+  "recommendations": ["추천 1 (50-100자)", "추천 2", "추천 3", "추천 4", "추천 5", "추천 6", "추천 7", "추천 8", "추천 9", "추천 10"],
+  "action_plan": ["1단계: ... (50-100자)", "2단계: ...", "3단계: ...", "4단계: ...", "5단계: ..."]
 }}
 
-**중요**: 
-- 모든 내용은 출판단지 활성화에 초점을 맞추세요
-- 구체적이고 실행 가능한 내용으로 작성하세요
-- 각 항목은 50-100자 이내로 명확하게 작성하세요
-- 데이터 기반으로 객관적인 분석을 제공하세요
+**중요 지침**:
+- "ML 예측 결과", "ML 분석 결과" 같은 용어를 사용하지 말고 자연스러운 서술형으로 작성
+- 해당 날짜의 예상 방문인구와 혼잡도를 자연스럽게 언급하며 분석
+- 구체적이고 실행 가능한 내용으로 작성 (예: "15-18시 북토크 프로그램 운영", "30대 여성 대상 작가 사인회 기획")
+- 창의적이고 실용적인 아이디어 제시 (예: "출판사 협업 프로그램", "디지털 콘텐츠 연계 전략")
+- 각 항목은 50-100자 이내로 명확하게 작성
+- 데이터 기반으로 객관적이면서도 인사이트 있는 분석 제공
+- 출판단지 특성에 맞는 큐레이션 중심 내용으로 작성
+- 활성화 지수는 실제 계산된 값을 사용하되, 고정값처럼 보이지 않도록 자연스럽게 언급
 
 응답은 반드시 유효한 JSON 형식으로만 제공해주세요.
 """
@@ -912,41 +961,63 @@ async def comprehensive_publishing_analysis(request: Dict):
         except (json.JSONDecodeError, ValueError) as e:
             print(f"[API] JSON 파싱 오류: {e}")
             print(f"[API] 응답 텍스트: {response_text[:500]}")
-            # 기본 분석 생성
+            # 기본 분석 생성 (예측 데이터 반영)
+            visit_summary = ""
+            if ml_prediction_data.get('visit_prediction'):
+                visit_summary = f"{predicted_visits:,.0f}명의 방문객이 예상되며, 혼잡도는 {crowd_level*100:.1f}%로 {'혼잡 예상' if crowd_level > 0.7 else '여유 예상' if crowd_level < 0.5 else '보통'}입니다. "
+            
+            program_recs = ""
+            if curation_metrics_summary:
+                program_recs = f"{curation_metrics_summary} "
+            
             analysis = {
-                "summary": f"출판단지 활성화 지수가 {vitality_score:.1f}점으로, {'활성화가 진행 중' if vitality_score >= 70 else '개선이 필요'}합니다.",
+                "summary": f"{visit_summary}출판단지 활성화 지수가 {vitality_score:.1f}점으로, {'활성화가 진행 중' if vitality_score >= 70 else '개선이 필요'}합니다. {program_recs}",
                 "detailed_analysis": [
-                    f"파주시 출판단지의 현재 활성화 지수는 {vitality_score:.1f}점으로 평가됩니다. 이는 {'목표 수준에 근접한' if vitality_score >= 70 else '목표 수준보다 낮은'} 상태로, {'지속적인 활성화 노력이 필요한' if vitality_score >= 70 else '즉각적인 개선 전략이 요구되는'} 상황입니다.",
-                    f"문화 공간 활성화 점수 {activation_overall:.1f}점과 주말/평일 방문 비율 {weekend_ratio:.2f}배의 데이터를 종합하면, 출판단지의 활성화는 {'주말 중심' if weekend_ratio > 1.2 else '평일 중심' if weekend_ratio < 0.8 else '균형잡힌'} 패턴을 보이고 있습니다.",
+                    f"{date_label}({weekday_name})에는 {predicted_visits:,.0f}명의 방문객이 예상됩니다. 이는 {'주말 프로그램 확대가 효과적일' if is_weekend else '평일 방문 활성화가 필요한'} 시기로, {'혼잡도 관리가 필요' if crowd_level > 0.7 else '프로그램 확대 여유가 있는'} 상황입니다.",
+                    f"파주시 출판단지의 현재 활성화 지수는 {vitality_score:.1f}점으로 평가됩니다. 문화 공간 활성화 점수 {activation_overall:.1f}점과 함께 종합하면, {'목표 수준에 근접한' if vitality_score >= 70 else '목표 수준보다 낮은'} 상태로 {'지속적인 활성화 노력이 필요한' if vitality_score >= 70 else '즉각적인 개선 전략이 요구되는'} 상황입니다.",
+                    f"주말/평일 방문 비율 {weekend_ratio:.2f}배와 {'주말' if is_weekend else '평일'} 특성을 고려하면, 출판단지의 활성화는 {'주말 중심' if weekend_ratio > 1.2 else '평일 중심' if weekend_ratio < 0.8 else '균형잡힌'} 패턴을 보이고 있습니다. {program_recs}해당 날짜에 맞춘 프로그램 운영이 필요합니다.",
                     "지역별 활성화 지수를 분석한 결과, 각 지역마다 고유한 특성을 가지고 있어 지역별 맞춤형 전략이 필요합니다. 특히 소비활력과 생산활력의 차이가 지역별 활성화 수준에 영향을 미치고 있습니다.",
-                    "주말 방문 패턴이 평일보다 높은 점은 주말 프로그램 집중 운영의 효과를 보여주며, 평일 방문 활성화를 위한 추가 전략이 필요합니다. 타겟 고객층별 맞춤 프로그램 개발을 통해 방문 패턴을 개선할 수 있습니다.",
-                    f"전반적으로 출판단지 활성화는 {'긍정적인 추세' if vitality_score >= 70 else '개선의 여지가 많은'} 상태입니다. 데이터 기반의 체계적인 접근과 지역 특성을 반영한 맞춤형 프로그램 운영을 통해 활성화 수준을 더욱 향상시킬 수 있을 것입니다."
+                    f"활성화 점수 세부 분석: 접근성 {activation_scores.get('accessibility', 0):.1f}점, 관심도 {activation_scores.get('interest', 0):.1f}점, 잠재력 {activation_scores.get('potential', 0):.1f}점, 활용도 {activation_scores.get('utilization', 0):.1f}점으로, {'접근성' if activation_scores.get('accessibility', 0) < 60 else '관심도' if activation_scores.get('interest', 0) < 60 else '잠재력' if activation_scores.get('potential', 0) < 60 else '활용도'} 개선이 가장 시급합니다.",
+                    f"전반적으로 출판단지 활성화는 {'긍정적인 추세' if vitality_score >= 70 else '개선의 여지가 많은'} 상태입니다. 해당 날짜의 예상 방문인구와 실제 지표를 종합하여, 날짜에 맞춘 프로그램 운영과 지역 특성을 반영한 맞춤형 전략을 통해 활성화 수준을 더욱 향상시킬 수 있을 것입니다.",
+                    f"향후 {date_label}를 위한 실행 계획: {program_recs if program_recs else ''}예상 방문인구를 고려한 {'혼잡도 관리' if crowd_level > 0.7 else '프로그램 확대'}와 {'주말' if is_weekend else '평일'} 특성에 맞는 큐레이션 프로그램 운영이 핵심입니다."
                 ],
                 "strengths": [
-                    "지역별 활성화 지수 데이터가 체계적으로 관리되고 있습니다",
-                    "주말 방문 패턴이 명확하게 분석되어 있습니다"
+                    f"{predicted_visits:,.0f}명의 방문객이 예상되어 활성화 여건이 양호합니다" if predicted_visits > 0 else "지역별 활성화 지수 데이터가 체계적으로 관리되고 있습니다",
+                    "주말 방문 패턴이 명확하게 분석되어 주말 프로그램 운영에 유리합니다" if weekend_ratio > 1.2 else "주말/평일 방문 패턴이 균형잡혀 있습니다",
+                    f"{demographic_targeting.get('recommended_target', {}).get('age_group', 'N/A')} 타겟 세그먼트가 명확하게 식별되어 있습니다" if demographic_targeting.get('recommended_target') else "활성화 점수 데이터가 체계적으로 관리되고 있습니다"
                 ],
                 "weaknesses": [
-                    "활성화 점수가 목표치에 미치지 못하고 있습니다",
-                    "평일 방문 활성화가 부족합니다"
+                    f"활성화 점수가 목표치에 미치지 못하고 있습니다 (현재 {activation_overall:.1f}점)",
+                    f"접근성이 {activation_scores.get('accessibility', 0):.1f}점으로 낮아 개선이 필요합니다" if activation_scores.get('accessibility', 0) < 60 else "평일 방문 활성화가 부족합니다" if not is_weekend else "활성화 지수가 목표 수준에 미치지 못하고 있습니다",
+                    f"잠재력이 {activation_scores.get('potential', 0):.1f}점으로 낮아 개선이 필요합니다" if activation_scores.get('potential', 0) < 60 else "지역별 활성화 수준 차이가 있습니다"
                 ],
                 "opportunities": [
-                    "주말 프로그램을 확대하여 활성화를 높일 수 있습니다",
-                    "타겟 고객층 맞춤 프로그램 개발이 필요합니다"
+                    f"{date_label} 예상 방문인구 {predicted_visits:,.0f}명을 활용한 프로그램 운영 기회" if predicted_visits > 0 else "주말 프로그램을 확대하여 활성화를 높일 수 있습니다",
+                    f"{'주말' if is_weekend else '평일'} 특성을 활용한 맞춤 프로그램 개발 기회",
+                    f"{curation_metrics_summary} 프로그램 운영으로 활성화 제고 가능" if curation_metrics_summary else "타겟 고객층 맞춤 프로그램 개발이 필요합니다",
+                    "지역별 활성화 지수 차이를 활용한 통합 전략 수립 기회",
+                    "날짜별 맞춤 프로그램 기획",
+                    "출판단지 특성을 활용한 창의적 프로그램 개발",
+                    "디지털 콘텐츠와 연계한 하이브리드 프로그램 운영"
                 ],
                 "recommendations": [
-                    "주말 특화 프로그램 확대 운영",
-                    "평일 직장인 대상 프로그램 개발",
-                    "지역별 맞춤형 활성화 전략 수립",
+                    f"{date_label} 예상 방문인구 {predicted_visits:,.0f}명을 고려한 {'혼잡도 관리' if crowd_level > 0.7 else '프로그램 확대'} 전략 수립" if predicted_visits > 0 else "주말 특화 프로그램 확대 운영",
+                    f"{'주말' if is_weekend else '평일'} 특성에 맞는 {'특화 프로그램' if is_weekend else '직장인 대상'} 개발",
+                    f"{curation_metrics_summary} 프로그램 우선 운영" if curation_metrics_summary else "타겟 고객층 맞춤 프로그램 개발",
+                    f"접근성 개선을 위한 {'교통 연계' if activation_scores.get('accessibility', 0) < 60 else '지역별 맞춤형'} 활성화 전략 수립",
                     "소비활력 향상을 위한 프로그램 기획",
-                    "출판 관련 프로그램 확대"
+                    "출판 관련 프로그램 확대",
+                    "날짜별 동적 프로그램 운영",
+                    "지역별 활성화 지수 통합 전략 수립",
+                    "디지털 콘텐츠 연계 프로그램 개발",
+                    "출판사 협업 프로그램 확대"
                 ],
                 "action_plan": [
-                    "1단계: 주말 프로그램 확대 계획 수립",
-                    "2단계: 타겟 고객층 분석 및 맞춤 프로그램 개발",
-                    "3단계: 지역별 활성화 전략 수립",
-                    "4단계: 프로그램 실행 및 모니터링",
-                    "5단계: 효과 평가 및 개선"
+                    f"1단계: {date_label} 예상 방문인구 기반 프로그램 운영 계획 수립",
+                    f"2단계: {'주말' if is_weekend else '평일'} 특성에 맞는 프로그램 기획 및 실행",
+                    "3단계: 타겟 고객층 분석 및 맞춤 프로그램 개발",
+                    "4단계: 지역별 활성화 전략 수립 및 실행",
+                    "5단계: 프로그램 실행 및 모니터링, 효과 평가 및 개선"
                 ]
             }
         
