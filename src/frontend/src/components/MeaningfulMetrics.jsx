@@ -305,25 +305,25 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
       const insightData = response.data
       setLlmInsights(prev => ({ ...prev, [metricKey]: insightData }))
       
-      // 리포트에 추가
-      if (insightData) {
-        console.log(`[MeaningfulMetrics] 리포트 추가: ${metricKey}`, insightData)
-        setReports(prev => {
-          const newReport = {
-            title: `${metricName} 분석 리포트`,
-            content: insightData,
-            type: 'insight',
-            metadata: {
-              date: new Date().toISOString().split('T')[0],
-              source: `출판단지 활성화 분석 - ${metricName}`
-            }
-          }
-          // 중복 제거
-          const exists = prev.some(r => r.title === newReport.title)
-          if (exists) return prev
-          return [...prev, newReport]
-        })
-      }
+      // 리포트에 추가하지 않음 (AI 분석 리포트 버튼 숨김 처리)
+      // if (insightData) {
+      //   console.log(`[MeaningfulMetrics] 리포트 추가: ${metricKey}`, insightData)
+      //   setReports(prev => {
+      //     const newReport = {
+      //       title: `${metricName} 분석 리포트`,
+      //       content: insightData,
+      //       type: 'insight',
+      //       metadata: {
+      //         date: new Date().toISOString().split('T')[0],
+      //         source: `출판단지 활성화 분석 - ${metricName}`
+      //       }
+      //     }
+      //     // 중복 제거
+      //     const exists = prev.some(r => r.title === newReport.title)
+      //     if (exists) return prev
+      //     return [...prev, newReport]
+      //   })
+      // }
     } catch (error) {
       console.error(`[LLM] ${metricKey} 인사이트 생성 실패:`, error)
       // 기본값 제공
@@ -376,25 +376,25 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
       const insightData = response.data
       setLlmInsights(prev => ({ ...prev, [metricKey]: insightData }))
       
-      // 리포트에 추가
-      if (insightData) {
-        console.log(`[MeaningfulMetrics] 차트 리포트 추가: ${metricKey}`, insightData)
-        setReports(prev => {
-          const newReport = {
-            title: `${chartType} 분석 리포트`,
-            content: insightData,
-            type: 'analysis',
-            metadata: {
-              date: new Date().toISOString().split('T')[0],
-              source: `출판단지 활성화 분석 - ${chartType}`
-            }
-          }
-          // 중복 제거
-          const exists = prev.some(r => r.title === newReport.title)
-          if (exists) return prev
-          return [...prev, newReport]
-        })
-      }
+      // 리포트에 추가하지 않음 (AI 분석 리포트 버튼 숨김 처리)
+      // if (insightData) {
+      //   console.log(`[MeaningfulMetrics] 차트 리포트 추가: ${metricKey}`, insightData)
+      //   setReports(prev => {
+      //     const newReport = {
+      //       title: `${chartType} 분석 리포트`,
+      //       content: insightData,
+      //       type: 'analysis',
+      //       metadata: {
+      //         date: new Date().toISOString().split('T')[0],
+      //         source: `출판단지 활성화 분석 - ${chartType}`
+      //       }
+      //     }
+      //     // 중복 제거
+      //     const exists = prev.some(r => r.title === newReport.title)
+      //     if (exists) return prev
+      //     return [...prev, newReport]
+      //   })
+      // }
     } catch (error) {
       console.error(`[LLM] ${metricKey} 차트 인사이트 생성 실패:`, error)
     } finally {
@@ -502,7 +502,8 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
             <MdMenuBook className="header-icon" />
             출판단지 활성화를 위한 AI 분석
           </h2>
-          {reports.length > 0 && (
+          {/* AI 분석 리포트 버튼 숨김 처리 */}
+          {false && reports.length > 0 && (
             <button 
               className="reports-header-btn"
               onClick={() => setShowReportModal(true)}
@@ -969,8 +970,8 @@ function MeaningfulMetrics({ spaceName = "헤이리예술마을", date = null, s
         {/* 생활인구 상관관계 - 큐레이션에 직접 필요하지 않으므로 제거 */}
         {/* 통계적 상관관계는 큐레이터가 직접 활용하기 어려운 기술적 지표 */}
 
-        {/* 프로그램 준비도 */}
-        {metrics?.program_readiness && (
+        {/* 프로그램 준비도 - 숨김 처리 */}
+        {false && metrics?.program_readiness && (
           <div className="metric-card program-readiness">
             <h3 className="card-title">
               <MdMenuBook className="card-title-icon" />

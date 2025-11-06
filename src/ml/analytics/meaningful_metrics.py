@@ -568,22 +568,7 @@ class MeaningfulMetricsCalculator:
             visit_prediction = None
             curation_metrics = None
         
-        # 날짜 기반 활성화 점수 계산 (ML 예측 데이터 사용)
-        activation_scores = self.calculate_cultural_space_activation_score_with_prediction(
-            space_name, date, visit_prediction, curation_metrics, predictor, content_generator
-        )
-        
-        # 활성화 지수 LLM 평가
-        if content_generator and activation_scores:
-            try:
-                llm_evaluation = self._evaluate_activation_scores_with_llm(
-                    space_name, date, activation_scores, content_generator, date_metadata, visit_prediction
-                )
-                activation_scores['llm_evaluation'] = llm_evaluation
-            except Exception as e:
-                print(f"[지표 계산] LLM 평가 오류: {e}")
-        
-        # 날짜별 특성 정보 추가
+        # 날짜별 특성 정보 추가 (먼저 생성)
         date_metadata = None
         try:
             date_obj = datetime.strptime(date, '%Y-%m-%d')
@@ -645,6 +630,21 @@ class MeaningfulMetricsCalculator:
             }
         except Exception as e:
             print(f"[지표 계산] 날짜 메타데이터 생성 오류: {e}")
+        
+        # 날짜 기반 활성화 점수 계산 (ML 예측 데이터 사용)
+        activation_scores = self.calculate_cultural_space_activation_score_with_prediction(
+            space_name, date, visit_prediction, curation_metrics, predictor, content_generator
+        )
+        
+        # 활성화 지수 LLM 평가
+        if content_generator and activation_scores:
+            try:
+                llm_evaluation = self._evaluate_activation_scores_with_llm(
+                    space_name, date, activation_scores, content_generator, date_metadata, visit_prediction
+                )
+                activation_scores['llm_evaluation'] = llm_evaluation
+            except Exception as e:
+                print(f"[지표 계산] LLM 평가 오류: {e}")
         
         # ML 예측 데이터 요약
         prediction_summary = None

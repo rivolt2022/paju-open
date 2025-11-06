@@ -38,39 +38,82 @@ class MeaningfulMetricsService:
     
     def get_comprehensive_metrics(self, space_name: str = "헤이리예술마을", date: str = None) -> Dict:
         """종합 지표 반환 (날짜 파라미터 지원 - ML 예측 사용)"""
-        if date and self.predictor:
-            # 날짜가 주어지면 ML 모델로 예측 데이터 생성
-            return self.calculator.get_comprehensive_metrics_with_prediction(
-                space_name, date, self.predictor, self.content_generator
-            )
+        if date:
+            # 날짜가 주어지면 날짜 기반 계산 사용
+            if self.predictor:
+                # ML 모델이 있으면 예측 데이터 사용
+                return self.calculator.get_comprehensive_metrics_with_prediction(
+                    space_name, date, self.predictor, self.content_generator
+                )
+            else:
+                # ML 모델이 없어도 날짜 기반 계산 (기본 계산 + 날짜 특성 반영)
+                print(f"[서비스] ML 모델이 없어 날짜 기반 기본 계산 사용: {date}")
+                metrics = self.calculator.get_comprehensive_metrics(space_name)
+                # 날짜 정보 추가
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(date, '%Y-%m-%d')
+                    metrics['date'] = date
+                    metrics['calculated_at'] = datetime.now().isoformat()
+                    metrics['uses_date_calculation'] = True
+                except:
+                    pass
+                return metrics
         else:
             # 기본 계산 (기존 방식)
             return self.calculator.get_comprehensive_metrics(space_name)
     
     def get_activation_scores(self, space_name: str, date: str = None) -> Dict:
         """활성화 점수 반환 (날짜 파라미터 지원 - ML 예측 사용)"""
-        if date and self.predictor:
-            # 날짜가 주어지면 ML 모델로 예측 데이터 생성
-            try:
-                # 방문인구 예측
-                visit_prediction = None
-                if hasattr(self.predictor, 'predict_cultural_space_visits'):
-                    visit_results = self.predictor.predict_cultural_space_visits([space_name], date, "afternoon")
-                    if visit_results:
-                        visit_prediction = visit_results[0]
-                
-                # 큐레이션 지표 예측
-                curation_metrics = None
-                if hasattr(self.predictor, 'predict_curation_metrics'):
-                    curation_metrics = self.predictor.predict_curation_metrics(space_name, date)
-                
-                return self.calculator.calculate_cultural_space_activation_score_with_prediction(
-                    space_name, date, visit_prediction, curation_metrics, self.predictor, self.content_generator
-                )
-            except Exception as e:
-                print(f"[서비스] ML 예측 오류: {e}")
-                # 기본 계산으로 폴백
-                return self.calculator.calculate_cultural_space_activation_score(space_name)
+        if date:
+            # 날짜가 주어지면 날짜 기반 계산 사용
+            if self.predictor:
+                # ML 모델이 있으면 예측 데이터 사용
+                try:
+                    # 방문인구 예측
+                    visit_prediction = None
+                    if hasattr(self.predictor, 'predict_cultural_space_visits'):
+                        visit_results = self.predictor.predict_cultural_space_visits([space_name], date, "afternoon")
+                        if visit_results:
+                            visit_prediction = visit_results[0]
+                    
+                    # 큐레이션 지표 예측
+                    curation_metrics = None
+                    if hasattr(self.predictor, 'predict_curation_metrics'):
+                        curation_metrics = self.predictor.predict_curation_metrics(space_name, date)
+                    
+                    return self.calculator.calculate_cultural_space_activation_score_with_prediction(
+                        space_name, date, visit_prediction, curation_metrics, self.predictor, self.content_generator
+                    )
+                except Exception as e:
+                    print(f"[서비스] ML 예측 오류: {e}")
+                    # 기본 계산으로 폴백하되 날짜 정보는 유지
+                    scores = self.calculator.calculate_cultural_space_activation_score(space_name)
+                    scores['date'] = date
+                    scores['uses_date_calculation'] = True
+                    return scores
+            else:
+                # ML 모델이 없어도 날짜 기반 계산 (기본 계산 + 날짜 특성 반영)
+                print(f"[서비스] ML 모델이 없어 날짜 기반 기본 계산 사용: {date}")
+                scores = self.calculator.calculate_cultural_space_activation_score(space_name)
+                # 날짜 정보 추가
+                try:
+                    from datetime import datetime
+                    date_obj = datetime.strptime(date, '%Y-%m-%d')
+                    scores['date'] = date
+                    scores['uses_date_calculation'] = True
+                    # 날짜별 특성 반영 (주말/평일, 계절 등)
+                    is_weekend = date_obj.weekday() >= 5
+                    month = date_obj.month
+                    if is_weekend:
+                        # 주말은 접근성과 잠재력 증가
+                        scores['accessibility'] = min(scores.get('accessibility', 60) * 1.05, 100)
+                        scores['potential'] = min(scores.get('potential', 60) * 1.05, 100)
+                    if month in [3, 4, 5, 9, 10, 11]:  # 봄/가을
+                        scores['interest'] = min(scores.get('interest', 60) * 1.03, 100)
+                except Exception as e:
+                    print(f"[서비스] 날짜 특성 반영 오류: {e}")
+                return scores
         else:
             # 기본 계산 (기존 방식)
             return self.calculator.calculate_cultural_space_activation_score(space_name)
